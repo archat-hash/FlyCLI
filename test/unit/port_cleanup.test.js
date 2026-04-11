@@ -4,16 +4,17 @@ import { jest } from '@jest/globals';
 jest.unstable_mockModule('serialport', () => ({
     SerialPort: jest.fn().mockImplementation(() => ({
         on: jest.fn(),
+        removeListener: jest.fn(),
         write: jest.fn(),
-        open: jest.fn((cb) => cb && cb(null)),
-        close: jest.fn((cb) => cb && cb(null)),
-        isOpen: true
+        open: jest.fn((cb) => { if (cb) cb(null); }),
+        close: jest.fn((cb) => { if (cb) cb(); }),
+        isOpen: false,
+        removeAllListeners: jest.fn()
     }))
 }));
 
 const { SerialPort } = await import('serialport');
-const { default: Connection } = await import('../src/core/connection.js');
-const { executeCommand } = await import('../src/commands/execute.js');
+const { default: executeCommand } = await import('../../src/commands/execute.js');
 
 describe('executeCommand — cleanup', () => {
     let mockPort;
@@ -25,10 +26,19 @@ describe('executeCommand — cleanup', () => {
             on: jest.fn((event, cb) => {
                 if (event === 'data') dataCallback = cb;
             }),
-            write: jest.fn(),
-            open: jest.fn((cb) => cb && cb(null)),
-            close: jest.fn((cb) => cb && cb(null)),
-            isOpen: true,
+            removeListener: jest.fn(),
+            write: jest.fn((data, cb) => {
+                if (cb) cb(null);
+            }),
+            open: jest.fn((cb) => {
+                if (cb) cb(null);
+                mockPort.isOpen = true;
+            }),
+            close: jest.fn((cb) => {
+                mockPort.isOpen = false;
+                if (cb) cb();
+            }),
+            isOpen: false,
             removeAllListeners: jest.fn()
         };
         SerialPort.mockImplementation(() => mockPort);
@@ -43,20 +53,25 @@ describe('executeCommand — cleanup', () => {
         );
 
         await new Promise((r) => setTimeout(r, 50));
-        dataCallback(Buffer.from('Entering CLI Mode\r\n# '));
-        dataCallback(Buffer.from('# Betaflight 4.3.2\r\n'));
+        dataCallback(Buffer.from('CLI\r\n# ')); // enter
+        await new Promise((r) => setTimeout(r, 700)); // wait for command write + echo protection
+        dataCallback(Buffer.from('out\r\nCLI\r\n# ')); // finish
 
-        await new Promise((r) => setTimeout(r, 600));
+        await cmdPromise;
 
         expect(mockPort.close).toHaveBeenCalledTimes(1);
-    });
+    }, 15000);
 
     it('should close the port on error', async () => {
         mockPort.open.mockImplementationOnce((cb) => cb(new Error('Port error')));
 
-        await executeCommand('/dev/tty.error', '115200', 'version', { json: false });
+        await executeCommand(
+            '/dev/tty.usbmodem1',
+            '115200',
+            'version',
+            { json: false }
+        );
 
-        // Port failed to open, so close should not be called on a non-existent port
         expect(mockPort.close).not.toHaveBeenCalled();
     });
 });

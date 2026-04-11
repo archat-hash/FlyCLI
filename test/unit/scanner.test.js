@@ -9,7 +9,7 @@ jest.unstable_mockModule('serialport', () => ({
 
 // Use dynamic imports to ensure the mock is applied
 const { SerialPort } = await import('serialport');
-const { default: Scanner } = await import('../src/core/scanner.js');
+const { default: Scanner } = await import('../../src/core/scanner.js');
 
 describe('Scanner', () => {
     beforeEach(() => {
