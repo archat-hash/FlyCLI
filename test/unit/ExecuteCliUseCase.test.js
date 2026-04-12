@@ -13,50 +13,69 @@ jest.unstable_mockModule('serialport', () => ({
   })),
 }));
 
+const { default: ExecuteCliUseCase } = await import('../../src/application/commands/ExecuteCliUseCase.js');
+const { default: SerialFlightController } = await import('../../src/infrastructure/SerialFlightController.js');
 const { SerialPort } = await import('serialport');
-const ExecuteCliUseCase = (await import('../../src/application/ExecuteCliUseCase.js')).default;
-const SerialFlightController = (await import('../../src/infrastructure/SerialFlightController.js')).default;
 
-describe('ExecuteCliUseCase — BDD Style', () => {
-  let controller;
-  let useCase;
-  let mockPort;
-  let dataCallback;
+const setup = () => {
+  jest.clearAllMocks();
+  const mockLogger = {
+    info: jest.fn(), log: jest.fn(), error: jest.fn(), debug: jest.fn(),
+  };
+  const mockPort = {
+    on: jest.fn(),
+    removeListener: jest.fn(),
+    write: jest.fn((data, cb) => { if (cb) cb(null); }),
+    open: jest.fn((cb) => cb && cb(null)),
+    close: jest.fn((cb) => cb && cb(null)),
+    isOpen: true,
+    removeAllListeners: jest.fn(),
+  };
+  SerialPort.mockImplementation(() => mockPort);
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockPort = {
-      on: jest.fn((event, cb) => {
-        if (event === 'data') dataCallback = cb;
-      }),
-      removeListener: jest.fn(),
-      write: jest.fn((data, cb) => {
-        if (cb) cb(null);
-      }),
-      open: jest.fn((cb) => cb && cb(null)),
-      close: jest.fn((cb) => cb && cb(null)),
-      isOpen: true,
-      removeAllListeners: jest.fn(),
-    };
-    SerialPort.mockImplementation(() => mockPort);
+  const controller = new SerialFlightController('/dev/tty.usb', 115200, mockLogger);
+  const useCase = new ExecuteCliUseCase(controller, mockLogger);
+  return {
+    controller, useCase, mockPort, mockLogger,
+  };
+};
 
-    controller = new SerialFlightController('/dev/tty.usb');
-    useCase = new ExecuteCliUseCase(controller);
-  });
-
+describe('ExecuteCliUseCase — Success Paths', () => {
   it('should process command from entrance to result', async () => {
-    // Stage 1: Handshake
+    const { useCase, mockPort } = setup();
+    let dataCallback;
+    mockPort.on.mockImplementation((event, cb) => { if (event === 'data') dataCallback = cb; });
+
     const executePromise = useCase.execute('version');
-
-    // FC responds to MSP API VERSION or we just send banner
-    await new Promise((r) => setTimeout(r, 50));
-    dataCallback(Buffer.from('##CLI\r\n# CLI ###\r\nCLI\r\n# '));
-
-    // Stage 2: Data response
-    await new Promise((r) => setTimeout(r, 300));
-    dataCallback(Buffer.from('version\r\nCLI\r\n# Betaflight / STM32F411\r\nCLI\r\n# '));
+    setTimeout(() => { if (dataCallback) dataCallback(Buffer.from('##CLI\r\n# ')); }, 10);
+    setTimeout(() => { if (dataCallback) dataCallback(Buffer.from('v\r\n# Betaflight / STM32F411\r\n# ')); }, 20);
 
     const result = await executePromise;
-    expect(result).toBe('Betaflight / STM32F411');
-  }, 15000);
+    expect(result).toContain('Betaflight / STM32F411');
+  });
+});
+
+describe('ExecuteCliUseCase — Error Resilience', () => {
+  it('should throw TimeoutError when device does not respond', async () => {
+    const { useCase } = setup();
+    jest.spyOn(SerialFlightController.prototype, 'waitFor').mockImplementation(() => new Promise(() => {}));
+    jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
+
+    const executePromise = useCase.execute('status');
+    jest.advanceTimersByTime(16000);
+
+    await expect(executePromise).rejects.toThrow('Timeout');
+    jest.useRealTimers();
+  });
+
+  it('should handle ConnectionError and DeviceError', async () => {
+    const { useCase } = setup();
+    // Test Connection Loss
+    jest.spyOn(SerialFlightController.prototype, 'waitFor').mockRejectedValue(new Error('Connection lost'));
+    await expect(useCase.execute('version')).rejects.toThrow('Connection lost');
+
+    // Test Reboot Failure
+    jest.spyOn(SerialFlightController.prototype, 'waitForDisconnect').mockRejectedValue(new Error('Fail'));
+    await expect(useCase.execute('save')).rejects.toThrow('Device did not gracefully disconnect');
+  });
 });

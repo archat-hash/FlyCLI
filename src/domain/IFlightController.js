@@ -1,7 +1,5 @@
-/* eslint-disable class-methods-use-this */
 /**
- * Interface for Flight Controller connection.
- * Represents the Domain Layer requirement for hardware interaction.
+ * Interface for flight controller implementations.
  * @interface
  */
 export default class IFlightController {

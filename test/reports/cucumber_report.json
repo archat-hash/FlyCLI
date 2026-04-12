@@ -1,0 +1,818 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "basic-command-execution;execute-status-command",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Execute status command",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 5865693
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 3,
+            "name": "a flight controller connected",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5325057
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 4,
+            "name": "the connection handshake is successful",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:89"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 29705375
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the flight controller entered CLI mode",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:93"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1422953
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I execute the CLI command \"status\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:100"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 134954751
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the response should contain \"MCU\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:150"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4605192
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "the output should not be empty",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:217"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1579710
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 615450
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "basic-command-execution;execute-tasks-command",
+        "keyword": "Scenario",
+        "line": 12,
+        "name": "Execute tasks command",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2536859
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 3,
+            "name": "a flight controller connected",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 699569
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 4,
+            "name": "the connection handshake is successful",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:89"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 25139064
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the flight controller entered CLI mode",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:93"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 664604
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 13,
+            "name": "I execute the CLI command \"tasks\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:100"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 134624777
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 14,
+            "name": "the output should contain \"Task\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:156"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3599350
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the response should contain \"SYSTEM\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:150"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 689737
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 783314
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "basic-command-execution",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Basic Command Execution",
+    "tags": [],
+    "uri": "test/bdd/general/basic_execution.feature"
+  },
+  {
+    "description": "  As a pilot or AI agent\n  I want to find connected flight controllers\n  So that I can connect and interact with them",
+    "elements": [
+      {
+        "description": "",
+        "id": "serial-port-discovery;listing-available-serial-ports",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Listing available serial ports",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2082910
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "the flight controller is connected to port \"/dev/tty.usbmodem0x80000001\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:66"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3458164
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I run the \"scan\" command",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:126"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 8587261
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "I should see \"/dev/tty.usbmodem0x80000001\" in the output",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:193"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2697889
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "the response should contain \"Betaflight\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:150"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 150749
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 202468
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "serial-port-discovery",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Serial Port Discovery",
+    "tags": [],
+    "uri": "test/bdd/general/discovery.feature"
+  },
+  {
+    "description": "  As a developer\n  I want the test suite to robustly detect flight controllers\n  So that I don't get false negatives due to transient environment issues",
+    "elements": [
+      {
+        "description": "",
+        "id": "hardware-discovery-resilience;robustly-finding-connected-hardware",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Robustly finding connected hardware",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2468677
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "I perform a robust hardware discovery",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:116"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2655163
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the port \"/dev/tty.usbmodem0x80000001\" should be available in the system",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:198"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2238696
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 158321
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "hardware-discovery-resilience",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Hardware Discovery Resilience",
+    "tags": [],
+    "uri": "test/bdd/general/discovery_resilience.feature"
+  },
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "domain-error-hierarchy;timeouterror-is-identifiable-as-flyclierror",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "TimeoutError is identifiable as FlyCliError",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1683871
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a TimeoutError is thrown with a message",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1713978
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 5,
+            "name": "it should be an instance of FlyCliError",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:21"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1057242
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 6,
+            "name": "it should have the correct name",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:25"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 891865
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 147962
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "domain-error-hierarchy;connectionerror-is-identifiable-as-flyclierror",
+        "keyword": "Scenario",
+        "line": 8,
+        "name": "ConnectionError is identifiable as FlyCliError",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1876845
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 9,
+            "name": "a ConnectionError is thrown with a message",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 498571
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "it should be an instance of FlyCliError",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:21"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 172924
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "it should have the correct name",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:25"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 76961
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 140462
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "domain-error-hierarchy;deviceerror-is-identifiable-as-flyclierror",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "DeviceError is identifiable as FlyCliError",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1808829
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 14,
+            "name": "a DeviceError is thrown with a message",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:17"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 264097
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 15,
+            "name": "it should be an instance of FlyCliError",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:21"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 77494
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 16,
+            "name": "it should have the correct name",
+            "match": {
+              "location": "test/bdd/shared_steps/error_steps.js:25"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 74598
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 145758
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "domain-error-hierarchy",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Domain Error Hierarchy",
+    "tags": [],
+    "uri": "test/bdd/general/domain_errors.feature"
+  },
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "reboot-logic;save-configuration-triggers-reboot",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Save configuration triggers reboot",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 2173329
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 3,
+            "name": "a flight controller connected",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:54"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 239335
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 4,
+            "name": "the connection handshake is successful",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:89"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 21824412
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the flight controller entered CLI mode",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:93"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 319816
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I execute the reboot command \"save\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:104"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 128895680
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the output should contain \"[REBOOT_INITIATED]\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:156"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 446343
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "the controller should have disconnected within 3 seconds",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:225"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2471947
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 146435
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "reboot-logic",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Reboot Logic",
+    "tags": [],
+    "uri": "test/bdd/general/reboot_logic.feature"
+  },
+  {
+    "description": "  As a pilot\n  I want to run a health check on my flight controller\n  So that I can identify potential issues before flight",
+    "elements": [
+      {
+        "description": "",
+        "id": "health-check-command;run-successful-health-check",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Run successful health check",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 10046089341
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a flight controller connected to \"/dev/tty.usbmodem0x80000001\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:72"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3940241
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the controller returns valid \"version\" and \"tasks\" output",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:79"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5492019
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I run the \"health\" command",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:126"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 565068027
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "I should receive a JSON report",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:174"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1405644
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "the report should contain \"version\" and \"tasks\"",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:181"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3927067
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "the controller should have executed \"version\" and \"tasks\" commands",
+            "match": {
+              "location": "test/bdd/shared_steps/cli_steps.js:189"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5557107
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 206098
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "health-check-command",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Health Check Command",
+    "tags": [],
+    "uri": "test/bdd/general/system_health.feature"
+  }
+]

@@ -3,34 +3,77 @@
  */
 export default class CliParser {
   /**
+   * @param {string} line
+   * @returns {boolean}
+   */
+  static #isTaskHeader(line) {
+    return line.includes('rate/hz') || line.includes('max/us') || line.includes('avg/us');
+  }
+
+  /**
+   * @param {string} line
+   * @returns {boolean}
+   */
+  static #isBannerLine(line) {
+    return line.includes('Betaflight') || line.includes('CLI');
+  }
+
+  /**
+   * @param {string} line
+   * @returns {boolean}
+   */
+  static #isSectionLine(line) {
+    return line.startsWith('#') && !line.startsWith('###') && line.length > 2;
+  }
+
+  static #TYPE_RULES = [
+    [(line) => line === '# ', 'PROMPT'],
+    [CliParser.#isTaskHeader, 'HEADER'],
+    [(line) => line.startsWith('###'), 'BANNER'],
+    [CliParser.#isSectionLine, 'SECTION'],
+    [CliParser.#isBannerLine, 'BANNER'],
+  ];
+
+  /**
+   * @param {string} line
+   * @returns {string}
+   */
+  static #detectType(line) {
+    const rule = CliParser.#TYPE_RULES.find(([predicate]) => predicate(line));
+    return rule ? rule[1] : 'DATA';
+  }
+
+  /**
+   * @param {string} line
+   * @param {string} type
+   * @returns {string}
+   */
+  static #extractContent(line, type) {
+    if (type === 'SECTION') return line.substring(1).trim();
+    if (type === 'PROMPT') return line;
+    return line.trim();
+  }
+
+  /**
+   * @param {string} line
+   * @returns {{ type: string, content: string }|null}
+   */
+  static #parseLine(line) {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+    const type = CliParser.#detectType(line);
+    const resolvedType = type === 'SECTION' ? 'DATA' : type;
+    return { type: resolvedType, content: CliParser.#extractContent(line, type) };
+  }
+
+  /**
    * Parses raw string from CLI into structured chunks.
    * @param {string} input
    * @returns {Array<{type: string, content: string}>}
    */
   static parse(input) {
-    const results = [];
-    const lines = input.split(/\r?\n/);
-
-    lines.forEach((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return;
-
-      // 1. Betaflight CLI prompt is exactly "# "
-      if (line === '# ') {
-        results.push({ type: 'PROMPT', content: '# ' });
-      } else if (line.includes('rate/hz') || line.includes('max/us') || line.includes('avg/us')) {
-        results.push({ type: 'HEADER', content: trimmed });
-      } else if (line.startsWith('###')) {
-        results.push({ type: 'BANNER', content: trimmed });
-      } else if (line.startsWith('#') && line.length > 2) {
-        results.push({ type: 'DATA', content: line.substring(1).trim() });
-      } else if (line.includes('Betaflight') || line.includes('CLI')) {
-        results.push({ type: 'BANNER', content: trimmed });
-      } else {
-        results.push({ type: 'DATA', content: trimmed });
-      }
-    });
-
-    return results;
+    return input.split(/\r?\n/)
+      .map((line) => CliParser.#parseLine(line))
+      .filter(Boolean);
   }
 }

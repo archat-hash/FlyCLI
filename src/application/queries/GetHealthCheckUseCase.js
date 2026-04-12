@@ -1,11 +1,22 @@
-import ExecuteCliUseCase from './ExecuteCliUseCase.js';
+import ExecuteCliUseCase from '../commands/ExecuteCliUseCase.js';
 
+/**
+ * Query to get comprehensive health status of the flight controller.
+ */
 export default class GetHealthCheckUseCase {
-  constructor(flightController) {
-    this.controller = flightController;
-    this.executeUseCase = new ExecuteCliUseCase(this.controller);
+  #controller;
+
+  #executeUseCase;
+
+  constructor(flightController, logger) {
+    this.#controller = flightController;
+    this.#executeUseCase = new ExecuteCliUseCase(this.#controller, logger);
   }
 
+  /**
+   * Executes the health check query.
+   * @returns {Promise<Object>} The health report.
+   */
   async execute() {
     const report = {
       timestamp: new Date().toISOString(),
@@ -17,20 +28,16 @@ export default class GetHealthCheckUseCase {
 
     const tryExecute = async (cmd) => {
       try {
-        return await this.executeUseCase.execute(cmd);
+        return await this.#executeUseCase.execute(cmd);
       } catch (error) {
         report.errors.push(`Error executing '${cmd}': ${error.message}`);
         return null;
       }
     };
 
-    // 1. Get Version
     report.version = await tryExecute('version');
-
-    // 2. Get Status
     report.status = await tryExecute('status');
 
-    // 3. Get Tasks
     const tasksOutput = await tryExecute('tasks');
     if (tasksOutput) {
       report.tasks = tasksOutput.split('\n');

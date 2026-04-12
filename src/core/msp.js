@@ -1,4 +1,6 @@
-/* eslint-disable no-bitwise, no-plusplus */
+/**
+ * MSP (MultiWii Serial Protocol) implementation for Betaflight.
+ */
 export default class MSP {
   static CMD = {
     API_VERSION: 1,
@@ -12,13 +14,11 @@ export default class MSP {
   };
 
   /**
-     * Parses a buffer into an MSP packet.
-     * @param {Buffer} buffer
-     * @returns {Object} Packet object.
-     */
+   * Parses a buffer into an MSP packet.
+   * @param {Buffer} buffer
+   * @returns {Object} Packet object.
+   */
   static parse(buffer) {
-    // Basic MSP v1 parser
-    // $ M < / > [size] [type] [payload] [crc]
     if (buffer.length < 6) return null;
 
     const size = buffer[3];
@@ -40,18 +40,18 @@ export default class MSP {
   }
 
   /**
-     * Encodes a command into an MSP packet.
-     * @param {number} type Command ID.
-     * @param {Buffer} payload Payload buffer.
-     * @returns {Buffer} Encoded MSP packet.
-     */
+   * Encodes a command into an MSP packet.
+   * @param {number} type Command ID.
+   * @param {Buffer} payload Payload buffer.
+   * @returns {Buffer} Encoded MSP packet.
+   */
   static encode(type, payload = Buffer.alloc(0)) {
     const size = payload.length;
     const buffer = Buffer.alloc(size + 6);
 
-    buffer[0] = 36; // $
-    buffer[1] = 77; // M
-    buffer[2] = 60; // <
+    buffer[0] = 36;
+    buffer[1] = 77;
+    buffer[2] = 60;
     buffer[3] = size;
     buffer[4] = type;
 

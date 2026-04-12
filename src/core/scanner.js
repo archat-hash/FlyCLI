@@ -2,9 +2,9 @@ import { SerialPort } from 'serialport';
 
 export default class Scanner {
   /**
-     * Lists all available serial ports.
-     * @returns {Promise<Array>} List of ports.
-     */
+   * Lists all available serial ports.
+   * @returns {Promise<Array>}
+   */
   static async listPorts() {
     try {
       const ports = await SerialPort.list();

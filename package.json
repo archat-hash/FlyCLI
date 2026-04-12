@@ -7,7 +7,16 @@
     "flycli": "./index.js"
   },
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "test:bdd": "node --experimental-vm-modules node_modules/.bin/cucumber-js",
+    "test:hw": "node --experimental-vm-modules node_modules/.bin/cucumber-js --profile hw",
+    "test:full": "npm run test && npm run test:bdd && npm run test:hw",
+    "pretest": "npm run lint",
+    "lint": "eslint .",
+    "prepare": "npm run lint"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "commander": "^14.0.3",
@@ -15,6 +24,7 @@
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.7.0",
+    "@jest/globals": "^30.3.0",
     "dependency-cruiser": "^17.3.10",
     "eslint": "^8.57.1",
     "eslint-config-airbnb-base": "^15.0.0",

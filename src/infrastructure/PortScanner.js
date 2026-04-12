@@ -1,13 +1,18 @@
-/* eslint-disable class-methods-use-this */
 import { SerialPort } from 'serialport';
 
+/**
+ * PortScanner helps finding flight controller serial ports.
+ */
 export default class PortScanner {
   /**
-     * Lists all available serial ports.
-     * @returns {Promise<Array>}
-     */
+   * Lists all available serial ports.
+   * @returns {Promise<Array>}
+   */
   async listPorts() {
     try {
+      if (process.env.FLYCLI_OVERRIDE_PORTS) {
+        return JSON.parse(process.env.FLYCLI_OVERRIDE_PORTS);
+      }
       const ports = await SerialPort.list();
       return ports.map((port) => ({
         path: port.path,
@@ -22,10 +27,10 @@ export default class PortScanner {
   }
 
   /**
-     * Heuristic to determine if a port is likely a Betaflight device.
-     * @param {Object} port
-     * @returns {boolean}
-     */
+   * Heuristic to determine if a port is likely a Betaflight device.
+   * @param {Object} port
+   * @returns {boolean}
+   */
   isLikelyBetaflight(port) {
     const manufacturer = (port.manufacturer || '').toLowerCase();
     const path = (port.path || '').toLowerCase();
@@ -34,7 +39,7 @@ export default class PortScanner {
       'stmicroelectronics',
       'silicon labs',
       'betaflight',
-      'arduino', // Some flight controllers appear as Arduino
+      'arduino',
     ];
 
     const likelyPathPatterns = [

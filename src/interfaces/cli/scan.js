@@ -1,5 +1,5 @@
-import PortScanner from '../infrastructure/PortScanner.js';
-import ListPortsUseCase from '../application/ListPortsUseCase.js';
+import PortScanner from '../../infrastructure/PortScanner.js';
+import ListPortsUseCase from '../../application/queries/ListPortsUseCase.js';
 
 /**
  * Scan for available serial ports and display them.
