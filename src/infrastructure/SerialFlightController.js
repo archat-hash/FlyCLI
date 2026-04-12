@@ -2,8 +2,10 @@ import { SerialPort } from 'serialport';
 import EventEmitter from 'events';
 import IFlightController from '../domain/IFlightController.js';
 import MSP from '../core/msp.js';
-
 import ConnectionState from '../domain/ConnectionState.js';
+import ConnectionError from '../domain/errors/ConnectionError.js';
+import TimeoutError from '../domain/errors/TimeoutError.js';
+import DeviceError from '../domain/errors/DeviceError.js';
 
 /**
  * SerialFlightController handles communication with a flight controller via a serial port.
@@ -21,33 +23,28 @@ export default class SerialFlightController extends IFlightController {
 
   #events;
 
+  #logger;
+
   /**
-   * Creates an instance of SerialFlightController.
-   * @param {string} path - The serial port path.
-   * @param {number} baudRate - The baud rate for the serial connection.
+   * @param {string} path
+   * @param {number} baudRate
+   * @param {object} logger
    */
-  constructor(path, baudRate) {
+  constructor(path, baudRate, logger) {
     super();
     this.#path = path;
     this.#baudRate = baudRate;
     this.#state = ConnectionState.DISCONNECTED;
     this.#buffer = '';
-    this.#port = null;
     this.#events = new EventEmitter();
-    this.setupPortListeners();
+    this.#logger = logger;
+    this.#port = null;
   }
 
-  /**
-   * Sets up event listeners for the serial port.
-   */
-  setupPortListeners() {
-    if (!this.#port) {
-      this.#port = new SerialPort({
-        path: this.#path,
-        baudRate: this.#baudRate,
-        autoOpen: false,
-      });
-    }
+  #ensurePort() {
+    if (this.#port) return;
+
+    this.#port = new SerialPort({ path: this.#path, baudRate: this.#baudRate, autoOpen: false });
     this.#port.on('data', (data) => this.handleData(data));
     this.#port.on('close', () => this.handleClose());
     this.#port.on('error', (err) => this.handleError(err));
@@ -66,7 +63,7 @@ export default class SerialFlightController extends IFlightController {
    * @param {Error} err - The error object.
    */
   handleError(err) {
-    console.error(`Serial port error on ${this.#path}: ${err.message}`);
+    this.#logger.error(`Serial port error on ${this.#path}: ${err.message}`);
     this.handleClose();
   }
 
@@ -93,12 +90,11 @@ export default class SerialFlightController extends IFlightController {
    */
   async clearBuffer() {
     this.#buffer = '';
+    this.#ensurePort();
     return new Promise((resolve) => {
-      if (this.#port && this.#port.isOpen && typeof this.#port.flush === 'function') {
+      if (this.#port.isOpen && typeof this.#port.flush === 'function') {
         this.#port.flush((err) => {
-          if (err) {
-            console.error(`Error flushing port: ${err.message}`);
-          }
+          if (err) this.#logger.error(`Error flushing port: ${err.message}`);
           resolve();
         });
       } else {
@@ -113,39 +109,46 @@ export default class SerialFlightController extends IFlightController {
    * @param {number} [timeoutMs=10000] - Timeout in milliseconds.
    * @returns {Promise<string>}
    */
+  #buildWaitForCleanup(timeout, onData, onConnectionLost) {
+    return () => {
+      clearTimeout(timeout);
+      this.#events.removeListener('data', onData);
+      this.#events.removeListener('connection_lost', onConnectionLost);
+    };
+  }
+
+  #matchPattern(pattern) {
+    return typeof pattern === 'string'
+      ? this.#buffer.includes(pattern)
+      : this.#buffer.match(pattern);
+  }
+
+  /**
+   * @param {string|RegExp} pattern
+   * @param {number} timeoutMs
+   * @returns {Promise<string>}
+   */
   async waitFor(pattern, timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
-      let timeout;
-
-      let cleanup;
-
       const onConnectionLost = () => {
-        cleanup();
-        reject(new Error(`Connection lost while waiting for pattern: ${pattern}`));
+        cleanup(); // eslint-disable-line no-use-before-define
+        reject(new ConnectionError(`Connection lost while waiting for pattern: ${pattern}`));
       };
 
       const onData = () => {
-        const match = typeof pattern === 'string'
-          ? this.#buffer.includes(pattern)
-          : this.#buffer.match(pattern);
-
-        if (match) {
-          cleanup();
+        if (this.#matchPattern(pattern)) {
+          cleanup(); // eslint-disable-line no-use-before-define
           resolve(this.#buffer);
         }
       };
 
-      cleanup = () => {
-        clearTimeout(timeout);
-        this.#events.removeListener('data', onData);
-        this.#events.removeListener('connection_lost', onConnectionLost);
-      };
-
-      timeout = setTimeout(() => {
-        cleanup();
-        reject(new Error(`Timeout waiting for pattern: ${pattern}`));
+      const timeout = setTimeout(() => {
+        cleanup(); // eslint-disable-line no-use-before-define
+        reject(new TimeoutError(`Timeout waiting for pattern: ${pattern}`));
       }, timeoutMs);
       timeout.unref();
+
+      const cleanup = this.#buildWaitForCleanup(timeout, onData, onConnectionLost);
 
       this.#events.on('data', onData);
       this.#events.on('connection_lost', onConnectionLost);
@@ -158,28 +161,26 @@ export default class SerialFlightController extends IFlightController {
   }
 
   async waitForDisconnect(timeoutMs = 5000) {
+    this.#ensurePort();
     return new Promise((resolve, reject) => {
-      let timeout;
       const onDisconnect = () => {
-        clearTimeout(timeout);
+        clearTimeout(timeout); // eslint-disable-line no-use-before-define
         this.#port.removeListener('close', onDisconnect);
         this.#port.removeListener('error', onDisconnect);
         resolve();
       };
 
-      timeout = setTimeout(() => {
+      const timeout = setTimeout(() => {
         this.#port.removeListener('close', onDisconnect);
         this.#port.removeListener('error', onDisconnect);
-        reject(new Error('Timeout waiting for disconnect'));
+        reject(new TimeoutError('Timeout waiting for disconnect'));
       }, timeoutMs);
       timeout.unref();
 
       this.#port.once('close', onDisconnect);
       this.#port.once('error', onDisconnect);
 
-      if (this.#port.isOpen === false) {
-        onDisconnect();
-      }
+      if (this.#port.isOpen === false) onDisconnect();
     });
   }
 
@@ -216,6 +217,7 @@ export default class SerialFlightController extends IFlightController {
   }
 
   #attemptConnect() {
+    this.#ensurePort();
     return new Promise((resolve, reject) => {
       if (this.#port.isOpen) {
         resolve();
@@ -236,7 +238,7 @@ export default class SerialFlightController extends IFlightController {
 
   async attemptCliEntry(retries = 10) {
     if (retries <= 0) {
-      throw new Error('Failed to enter CLI mode: total timeout');
+      throw new DeviceError('Failed to enter CLI mode: total timeout');
     }
 
     await this.sendRaw('#\n');
@@ -250,17 +252,18 @@ export default class SerialFlightController extends IFlightController {
   }
 
   async disconnect() {
-    if (this.#state === ConnectionState.DISCONNECTED) return Promise.resolve();
+    const portIsActuallyOpen = this.#port && this.#port.isOpen;
+    if (this.#state === ConnectionState.DISCONNECTED && !portIsActuallyOpen) {
+      return Promise.resolve();
+    }
     this.#state = ConnectionState.DISCONNECTING;
     await this.clearBuffer();
     this.#events.removeAllListeners();
 
     return new Promise((resolve) => {
-      if (this.#port && this.#port.isOpen) {
+      if (portIsActuallyOpen) {
         this.#port.close((err) => {
-          if (err) {
-            console.error(`Error closing port: ${err.message}`);
-          }
+          if (err) this.#logger.error(`Error closing port: ${err.message}`);
           this.#state = ConnectionState.DISCONNECTED;
           resolve();
         });
@@ -272,9 +275,10 @@ export default class SerialFlightController extends IFlightController {
   }
 
   async sendRaw(data) {
+    this.#ensurePort();
     return new Promise((resolve, reject) => {
-      if (!this.#port || !this.#port.isOpen) {
-        reject(new Error('Port not open'));
+      if (!this.#port.isOpen) {
+        reject(new ConnectionError('Port not open'));
         return;
       }
       this.#port.write(data, (err) => {

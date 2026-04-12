@@ -1,3 +1,6 @@
+/**
+ * Query to list all available flight controller ports.
+ */
 export default class ListPortsUseCase {
   #scanner;
 
@@ -5,6 +8,10 @@ export default class ListPortsUseCase {
     this.#scanner = portScanner;
   }
 
+  /**
+   * Executes the list ports query.
+   * @returns {Promise<Array>} List of ports.
+   */
   async execute() {
     return this.#scanner.listPorts();
   }

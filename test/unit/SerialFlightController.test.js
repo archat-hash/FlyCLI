@@ -27,6 +27,7 @@ const { default: MSP } = await import('../../src/core/msp.js');
 describe('SerialFlightController', () => {
   let controller;
   let portDataListener;
+  let mockLogger;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -35,15 +36,18 @@ describe('SerialFlightController', () => {
       if (event === 'data') portDataListener = cb;
     });
 
-    controller = new SerialFlightController('/dev/tty.test', 115200);
+    mockLogger = {
+      info: jest.fn(),
+      log: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
+    controller = new SerialFlightController('/dev/tty.test', 115200, mockLogger);
   });
 
   test('connect() should perform MSP handshake and wait for CLI banner', async () => {
     const handshakePacket = MSP.encode(MSP.CMD.API_VERSION);
-
-    // Setup listener capture
-    controller.setupPortListeners();
-
+    // connect() calls #ensurePort() which sets up listeners
     const connectPromise = controller.connect();
 
     await new Promise((resolve) => { setTimeout(resolve, 50); });
@@ -72,7 +76,6 @@ describe('SerialFlightController', () => {
   });
 
   test('clearBuffer should handle flush and its errors', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
     mockPort.isOpen = true;
 
     controller.clearBuffer();
@@ -80,8 +83,7 @@ describe('SerialFlightController', () => {
 
     mockPort.flush.mockImplementationOnce((cb) => cb(new Error('Flush failed')));
     controller.clearBuffer();
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Flush failed'));
-    consoleSpy.mockRestore();
+    expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Flush failed'));
   });
 
   test('onData and removeListener should work correctly', () => {

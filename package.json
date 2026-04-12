@@ -8,8 +8,8 @@
   },
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "test:bdd": "node --experimental-vm-modules node_modules/.bin/cucumber-js test/bdd/general/*.feature --import test/bdd/shared_steps/*.js",
-    "test:hw": "node --experimental-vm-modules node_modules/.bin/cucumber-js test/bdd/firmware/v4.3.x/*.feature --import test/bdd/shared_steps/*.js --import test/bdd/firmware/v4.3.x/*.js",
+    "test:bdd": "node --experimental-vm-modules node_modules/.bin/cucumber-js test/bdd/general/*.feature --import 'test/bdd/shared_steps/*.js'",
+    "test:hw": "node --experimental-vm-modules node_modules/.bin/cucumber-js test/bdd/firmware/v4.3.x/*.feature --import 'test/bdd/shared_steps/*.js' --import 'test/bdd/firmware/v4.3.x/*.js'",
     "test:full": "npm run test && npm run test:bdd && npm run test:hw",
     "lint": "eslint ."
   },

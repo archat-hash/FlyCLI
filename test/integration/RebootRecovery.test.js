@@ -1,7 +1,8 @@
 import fs from 'fs';
-import ExecuteCliUseCase from '../../src/application/ExecuteCliUseCase.js';
+import ExecuteCliUseCase from '../../src/application/commands/ExecuteCliUseCase.js';
 import SerialFlightController from '../../src/infrastructure/SerialFlightController.js';
 import PortScanner from '../../src/infrastructure/PortScanner.js';
+import ConsoleLogger from '../../src/infrastructure/Logger.js';
 
 /**
  * Given:  FC receives 'save' command
@@ -23,8 +24,9 @@ describe('Reboot Recovery Integration', () => {
     }
 
     // Given: connected and in CLI mode
-    const controller = new SerialFlightController(port, 115200);
-    const useCase = new ExecuteCliUseCase(controller);
+    const logger = new ConsoleLogger();
+    const controller = new SerialFlightController(port, 115200, logger);
+    const useCase = new ExecuteCliUseCase(controller, logger);
 
     // When: execute 'save'
     const result = await useCase.execute('save');

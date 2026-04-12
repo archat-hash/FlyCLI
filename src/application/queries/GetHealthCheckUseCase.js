@@ -1,15 +1,22 @@
-import ExecuteCliUseCase from './ExecuteCliUseCase.js';
+import ExecuteCliUseCase from '../commands/ExecuteCliUseCase.js';
 
+/**
+ * Query to get comprehensive health status of the flight controller.
+ */
 export default class GetHealthCheckUseCase {
   #controller;
 
   #executeUseCase;
 
-  constructor(flightController) {
+  constructor(flightController, logger) {
     this.#controller = flightController;
-    this.#executeUseCase = new ExecuteCliUseCase(this.#controller);
+    this.#executeUseCase = new ExecuteCliUseCase(this.#controller, logger);
   }
 
+  /**
+   * Executes the health check query.
+   * @returns {Promise<Object>} The health report.
+   */
   async execute() {
     const report = {
       timestamp: new Date().toISOString(),

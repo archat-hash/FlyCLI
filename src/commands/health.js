@@ -1,5 +1,23 @@
 import SerialFlightController from '../infrastructure/SerialFlightController.js';
-import GetHealthCheckUseCase from '../application/GetHealthCheckUseCase.js';
+import GetHealthCheckUseCase from '../application/queries/GetHealthCheckUseCase.js';
+import ConsoleLogger from '../infrastructure/Logger.js';
+
+/**
+ * @param {Object} report
+ */
+function printReport(report) {
+  console.log('\n🚁 FlyCLI Health Report');
+  console.log('-----------------------');
+  console.log(`Time: ${report.timestamp}`);
+  console.log(`Version: ${report.version?.split('\n')[0] || 'Unknown'}`);
+  console.log(`Status Highlights: ${report.status?.split('\n')[1] || 'N/A'}`);
+  console.log(`Tasks: ${report.tasks.length} tasks running`);
+  if (report.errors.length > 0) {
+    console.log('\n⚠️ Errors:');
+    report.errors.forEach((err) => console.log(`- ${err}`));
+  }
+  console.log('\nUse --json for full details.');
+}
 
 /**
  * Performs a health check on the flight controller.
@@ -8,27 +26,16 @@ import GetHealthCheckUseCase from '../application/GetHealthCheckUseCase.js';
  * @param {Object} options
  */
 export default async function getHealth(port, baudRate, options) {
-  const controller = new SerialFlightController(port, parseInt(baudRate, 10));
-  const useCase = new GetHealthCheckUseCase(controller);
+  const logger = new ConsoleLogger();
+  const controller = new SerialFlightController(port, parseInt(baudRate, 10), logger);
+  const useCase = new GetHealthCheckUseCase(controller, logger);
 
   try {
     const report = await useCase.execute();
-
     if (options.json) {
       console.log(JSON.stringify(report, null, 2));
     } else {
-      console.log('\n🚁 FlyCLI Health Report');
-      console.log('-----------------------');
-      console.log(`Time: ${report.timestamp}`);
-      console.log(`Version: ${report.version?.split('\n')[0] || 'Unknown'}`);
-      console.log(`Status Highlights: ${report.status?.split('\n')[1] || 'N/A'}`);
-      console.log(`Tasks: ${report.tasks.length} tasks running`);
-
-      if (report.errors.length > 0) {
-        console.log('\n⚠️ Errors:');
-        report.errors.forEach((err) => console.log(`- ${err}`));
-      }
-      console.log('\nUse --json for full details.');
+      printReport(report);
     }
   } catch (err) {
     console.error(`Error performing health check: ${err.message}`);

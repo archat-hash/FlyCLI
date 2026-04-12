@@ -13,18 +13,26 @@ jest.unstable_mockModule('serialport', () => ({
   })),
 }));
 
+const { default: ExecuteCliUseCase } = await import('../../src/application/commands/ExecuteCliUseCase.js');
+const { default: SerialFlightController } = await import('../../src/infrastructure/SerialFlightController.js');
 const { SerialPort } = await import('serialport');
-const ExecuteCliUseCase = (await import('../../src/application/ExecuteCliUseCase.js')).default;
-const SerialFlightController = (await import('../../src/infrastructure/SerialFlightController.js')).default;
 
 describe('ExecuteCliUseCase — BDD Style', () => {
   let controller;
   let useCase;
   let mockPort;
+  let mockLogger;
   let dataCallback;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    dataCallback = null;
+    mockLogger = {
+      info: jest.fn(),
+      log: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
     mockPort = {
       on: jest.fn((event, cb) => {
         if (event === 'data') dataCallback = cb;
@@ -40,8 +48,8 @@ describe('ExecuteCliUseCase — BDD Style', () => {
     };
     SerialPort.mockImplementation(() => mockPort);
 
-    controller = new SerialFlightController('/dev/tty.usb');
-    useCase = new ExecuteCliUseCase(controller);
+    controller = new SerialFlightController('/dev/tty.usb', 115200, mockLogger);
+    useCase = new ExecuteCliUseCase(controller, mockLogger);
   });
 
   it('should process command from entrance to result', async () => {

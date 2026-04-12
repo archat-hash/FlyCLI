@@ -1,10 +1,11 @@
 import { jest } from '@jest/globals';
 
-const { default: GetHealthCheckUseCase } = await import('../../src/application/GetHealthCheckUseCase.js');
+const { default: GetHealthCheckUseCase } = await import('../../src/application/queries/GetHealthCheckUseCase.js');
 
 describe('GetHealthCheckUseCase — Coverage', () => {
   let mockController;
   let mainUseCase;
+  let mockLogger;
 
   beforeEach(() => {
     mockController = {
@@ -16,7 +17,13 @@ describe('GetHealthCheckUseCase — Coverage', () => {
       buffer: '# ',
       onData: jest.fn(() => () => { }),
     };
-    mainUseCase = new GetHealthCheckUseCase(mockController);
+    mockLogger = {
+      info: jest.fn(),
+      log: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
+    mainUseCase = new GetHealthCheckUseCase(mockController, mockLogger);
   });
 
   it('should generate health report successfully', async () => {

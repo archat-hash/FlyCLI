@@ -1,8 +1,8 @@
 import fs from 'fs';
 import SerialFlightController from '../../src/infrastructure/SerialFlightController.js';
-import ExecuteCliUseCase from '../../src/application/ExecuteCliUseCase.js';
-import CliParser from '../../src/domain/CliParser.js';
+import ExecuteCliUseCase from '../../src/application/commands/ExecuteCliUseCase.js';
 import PortScanner from '../../src/infrastructure/PortScanner.js';
+import ConsoleLogger from '../../src/infrastructure/Logger.js';
 
 describe('Integration Test: Connection Stability', () => {
   it('should detect the exact failure point', async () => {
@@ -16,8 +16,9 @@ describe('Integration Test: Connection Stability', () => {
       return;
     }
 
-    const controller = new SerialFlightController(port, 115200);
-    const useCase = new ExecuteCliUseCase(controller, new CliParser());
+    const logger = new ConsoleLogger();
+    const controller = new SerialFlightController(port, 115200, logger);
+    const useCase = new ExecuteCliUseCase(controller, logger);
 
     console.log('--- Starting connection test ---');
     await controller.connect();

@@ -13,7 +13,7 @@ jest.unstable_mockModule('serialport', () => ({
   })),
 }));
 
-const { default: ExecuteCliUseCase } = await import('../../src/application/ExecuteCliUseCase.js');
+const { default: ExecuteCliUseCase } = await import('../../src/application/commands/ExecuteCliUseCase.js');
 
 describe('ExecuteCliUseCase — Reboot Coverage', () => {
   let mockController;
@@ -30,9 +30,14 @@ describe('ExecuteCliUseCase — Reboot Coverage', () => {
       reset: jest.fn().mockResolvedValue(),
       disconnect: jest.fn().mockResolvedValue(),
       clearBuffer: jest.fn(),
-      onData: jest.fn(() => () => { }),
     };
-    useCase = new ExecuteCliUseCase(mockController);
+    const mockLogger = {
+      info: jest.fn(),
+      log: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
+    useCase = new ExecuteCliUseCase(mockController, mockLogger);
   });
 
   it('should handle "save" command with reboot detection', async () => {
@@ -49,10 +54,10 @@ describe('ExecuteCliUseCase — Reboot Coverage', () => {
     expect(result).toBe('[REBOOT_INITIATED]');
   });
 
-  it('should handle "bl" command', async () => {
-    const result = await useCase.execute('bl');
+  it('should handle "exit" command', async () => {
+    const result = await useCase.execute('exit');
     expect(mockController.waitForDisconnect).toHaveBeenCalled();
-    expect(result).toBe('[DFU_ENTERED]');
+    expect(result).toBe('[REBOOT_INITIATED]');
   });
 
   it('should throw error if device fails to disconnect', async () => {
