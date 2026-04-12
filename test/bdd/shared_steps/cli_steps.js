@@ -133,7 +133,7 @@ When('I run the {string} command', { timeout: 25000 }, async (cmdName) => {
     response = await useCase.execute(cmd);
     capturedOutput = response;
   } else if (cmdName === 'scan') {
-    const { default: scanCommand } = await import('../../../src/commands/scan.js');
+    const { default: scanCommand } = await import('../../../src/interfaces/cli/scan.js');
     const originalLog = console.log;
     capturedOutput = '';
     console.log = (msg) => {

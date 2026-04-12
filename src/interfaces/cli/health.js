@@ -1,6 +1,6 @@
-import SerialFlightController from '../infrastructure/SerialFlightController.js';
-import GetHealthCheckUseCase from '../application/queries/GetHealthCheckUseCase.js';
-import ConsoleLogger from '../infrastructure/Logger.js';
+import SerialFlightController from '../../infrastructure/SerialFlightController.js';
+import GetHealthCheckUseCase from '../../application/queries/GetHealthCheckUseCase.js';
+import ConsoleLogger from '../../infrastructure/Logger.js';
 
 /**
  * @param {Object} report

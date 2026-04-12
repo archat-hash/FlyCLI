@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import scanCommand from './src/commands/scan.js';
-import executeCommand from './src/commands/execute.js';
-import healthCommand from './src/commands/health.js';
+import scanCommand from './src/interfaces/cli/scan.js';
+import executeCommand from './src/interfaces/cli/execute.js';
+import healthCommand from './src/interfaces/cli/health.js';
 
 const program = new Command();
 

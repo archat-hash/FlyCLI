@@ -45,7 +45,17 @@ classDiagram
 - **Domain Layer**: Сутності та інтерфейси (`IFlightController`, `CliParser`).
 - **Application Layer**: Use Cases, що реалізують конкретні бізнес-сценарії (`ExecuteCliUseCase`, `GetHealthCheckUseCase`).
 - **Infrastructure Layer**: Реалізація Serial-зв'язку та Port Scanning.
-- **Delivery Layer**: CLI інтерфейс (Commander.js).
+- **Delivery Layer (Composition Root)**: CLI інтерфейс у `src/interfaces/cli/`.
+
+---
+
+## 2.1. Composition Root & Dependency Injection
+Згідно з принципами Clean Architecture, ми використовуємо **Delivery Layer** як **Composition Root**. 
+
+> [!IMPORTANT]
+> Тільки файли в `src/interfaces/cli/` мають право імпортувати як `application`, так і `infrastructure`. Саме тут відбувається інстанціювання конкретних реалізацій (наприклад, `SerialFlightController`) та їх передача (Injection) в Use Cases.
+
+Це дозволяє шару **Application** залишатися "стерильним" та не знати нічого про деталі реалізації заліза чи бібліотек логування.
 
 ---
 
@@ -78,7 +88,7 @@ sequenceDiagram
 - **Module System**: ESM (ECMAScript Modules).
 - **Testing Strategy**:
     - **Unit (Jest)**: 100% покриття бізнес-логіки Use Case за допомогою моків. Тести знаходяться в `test/unit/`.
-    - **Integration (Jest)**: Технічна верифікація інфраструктури (стабільність з'єднання, архітектурні правила). Тести в `test/integration/`.
+    - **Integration (Jest)**: Технічна верифікація інфраструктури (стабільність з'єднання, архітектурні правила). Перевіряє `no-app-to-infra` за допомогою **dependency-cruiser**. Тести в `test/integration/`.
     - **BDD (Cucumber)**: Реальна поведінкова верифікація на апаратному чіпі (STM32F411). Тести в `test/bdd/` — це основний доказ працездатності для кінцевого користувача.
 - **Safety**: Кожна операція захищена таймаутами та механізмами очищення буферів (flush).
 

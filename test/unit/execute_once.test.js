@@ -14,7 +14,7 @@ jest.unstable_mockModule('serialport', () => ({
 }));
 
 const { SerialPort } = await import('serialport');
-const { default: executeCommand } = await import('../../src/commands/execute.js');
+const { default: executeCommand } = await import('../../src/interfaces/cli/execute.js');
 
 describe('executeCommand — cleanup', () => {
   let mockPort;

@@ -1,6 +1,6 @@
-import SerialFlightController from '../infrastructure/SerialFlightController.js';
-import ExecuteCliUseCase from '../application/commands/ExecuteCliUseCase.js';
-import ConsoleLogger from '../infrastructure/Logger.js';
+import SerialFlightController from '../../infrastructure/SerialFlightController.js';
+import ExecuteCliUseCase from '../../application/commands/ExecuteCliUseCase.js';
+import ConsoleLogger from '../../infrastructure/Logger.js';
 
 /**
  * @param {string} output

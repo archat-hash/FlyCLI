@@ -22,7 +22,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['test/**/*.js', 'index.js', 'src/commands/*.js'],
+      files: ['test/**/*.js', 'index.js', 'src/interfaces/cli/**/*.js'],
       rules: {
         'no-console': 'off',
       },
@@ -36,7 +36,7 @@ module.exports = {
       },
     },
     {
-      files: ['src/commands/*.js'],
+      files: ['src/interfaces/cli/**/*.js'],
       rules: {
         'max-params': 'off',
       },

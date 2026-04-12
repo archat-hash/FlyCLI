@@ -11,6 +11,13 @@ module.exports = {
       severity: "error",
       from: { path: "^src/application" },
       to: { path: "^src/infrastructure" }
+    },
+    {
+      name: "composition-root-purity",
+      comment: "Тільки шар interfaces (Delivery) може поєднувати application та infrastructure для DI.",
+      severity: "error",
+      from: { path: "^src/(domain|application|infrastructure)" },
+      to: { path: "^src/interfaces" }
     }
   ],
   options: {
