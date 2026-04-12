@@ -1,6 +1,5 @@
 import { jest } from '@jest/globals';
 
-// Mock serialport
 jest.unstable_mockModule('serialport', () => ({
   SerialPort: jest.fn().mockImplementation(() => ({
     on: jest.fn(),
@@ -48,16 +47,14 @@ describe('executeCommand — Data Fragmentation Fix', () => {
 
     const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 
-    // 1. Initial prompt
+    /* Initial prompt */
     await new Promise((r) => { setTimeout(r, 50); });
     dataCallback(Buffer.from('CLI\r\n# '));
 
-    // 2. Slow fragmented response:
-    // Chunk 1: Echo + start of a comment
+    /* Slow fragmented response */
     await new Promise((r) => { setTimeout(r, 300); });
     dataCallback(Buffer.from('version\r\n#'));
 
-    // Chunk 2: Arrives after the current 200ms debounce
     await new Promise((r) => { setTimeout(r, 400); });
     dataCallback(Buffer.from(' Betaflight / STM32F411\r\nCLI\r\n# '));
 

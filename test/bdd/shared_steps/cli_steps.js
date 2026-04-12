@@ -21,14 +21,15 @@ Before({ timeout: 20000 }, async () => {
   const scanner = new PortScanner();
   let device;
 
-  // Polling: OS and serialport library take time to re-enumerate USB after a reboot.
-  for (let i = 0; i < 40; i += 1) { // Max 20 seconds (40 * 500ms)
-    // eslint-disable-next-line no-await-in-loop
+  /**
+   * Polling: OS and serialport library take time to re-enumerate USB after a reboot.
+   * Max 20 seconds (40 * 500ms)
+   */
+  for (let i = 0; i < 40; i += 1) {
     const ports = await scanner.listPorts();
     device = ports.find((p) => p.isLikelyBetaflight);
 
     if (device) break;
-    // eslint-disable-next-line no-await-in-loop
     await new Promise((r) => { setTimeout(r, 500).unref(); });
   }
 

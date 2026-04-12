@@ -28,13 +28,9 @@ export default class GetHealthCheckUseCase {
       }
     };
 
-    // 1. Get Version
     report.version = await tryExecute('version');
-
-    // 2. Get Status
     report.status = await tryExecute('status');
 
-    // 3. Get Tasks
     const tasksOutput = await tryExecute('tasks');
     if (tasksOutput) {
       report.tasks = tasksOutput.split('\n');

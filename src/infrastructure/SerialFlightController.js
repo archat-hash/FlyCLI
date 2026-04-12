@@ -5,6 +5,9 @@ import MSP from '../core/msp.js';
 
 import ConnectionState from '../domain/ConnectionState.js';
 
+/**
+ * SerialFlightController handles communication with a flight controller via a serial port.
+ */
 export default class SerialFlightController extends IFlightController {
   #path;
 
@@ -18,6 +21,11 @@ export default class SerialFlightController extends IFlightController {
 
   #events;
 
+  /**
+   * Creates an instance of SerialFlightController.
+   * @param {string} path - The serial port path.
+   * @param {number} baudRate - The baud rate for the serial connection.
+   */
   constructor(path, baudRate) {
     super();
     this.#path = path;
@@ -29,6 +37,9 @@ export default class SerialFlightController extends IFlightController {
     this.setupPortListeners();
   }
 
+  /**
+   * Sets up event listeners for the serial port.
+   */
   setupPortListeners() {
     if (!this.#port) {
       this.#port = new SerialPort({
@@ -42,23 +53,33 @@ export default class SerialFlightController extends IFlightController {
     this.#port.on('error', (err) => this.handleError(err));
   }
 
+  /**
+   * Handles the close event of the serial port.
+   */
   handleClose() {
     this.#state = ConnectionState.DISCONNECTED;
     this.#events.emit('connection_lost');
   }
 
+  /**
+   * Handles errors from the serial port.
+   * @param {Error} err - The error object.
+   */
   handleError(err) {
     console.error(`Serial port error on ${this.#path}: ${err.message}`);
     this.handleClose();
   }
 
+  /**
+   * Processes incoming data from the serial port.
+   * @param {Buffer} data - The incoming data.
+   */
   handleData(data) {
     const chunk = data.toString();
     this.#buffer += chunk;
 
     this.#events.emit('data', chunk);
 
-    // Prompt detection
     if (this.#buffer.endsWith('# ')) {
       this.#events.emit('prompt', this.#buffer);
     } else if (this.#buffer.includes('CLI')) {
@@ -66,6 +87,10 @@ export default class SerialFlightController extends IFlightController {
     }
   }
 
+  /**
+   * Clears the internal buffer and flushes the serial port.
+   * @returns {Promise<void>}
+   */
   async clearBuffer() {
     this.#buffer = '';
     return new Promise((resolve) => {
@@ -82,6 +107,12 @@ export default class SerialFlightController extends IFlightController {
     });
   }
 
+  /**
+   * Waits for a specific pattern to appear in the buffer.
+   * @param {string|RegExp} pattern - The pattern to wait for.
+   * @param {number} [timeoutMs=10000] - Timeout in milliseconds.
+   * @returns {Promise<string>}
+   */
   async waitFor(pattern, timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
       let timeout;
@@ -118,9 +149,8 @@ export default class SerialFlightController extends IFlightController {
 
       this.#events.on('data', onData);
       this.#events.on('connection_lost', onConnectionLost);
-      onData(); // Check immediate
+      onData();
 
-      // Check if already disconnected
       if (this.#state === ConnectionState.DISCONNECTED && (!this.#port || !this.#port.isOpen)) {
         onConnectionLost();
       }
@@ -147,7 +177,6 @@ export default class SerialFlightController extends IFlightController {
       this.#port.once('close', onDisconnect);
       this.#port.once('error', onDisconnect);
 
-      // Edge case: already closed (strict check for false to support mocks better)
       if (this.#port.isOpen === false) {
         onDisconnect();
       }
@@ -213,7 +242,6 @@ export default class SerialFlightController extends IFlightController {
     await this.sendRaw('#\n');
 
     try {
-      // Wait for either CLI banner or prompt (handling potential space-less echoes)
       await this.waitFor(/CLI|#\s?/, 1000);
       this.#state = ConnectionState.CLI_MODE;
     } catch (e) {

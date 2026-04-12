@@ -20,33 +20,26 @@ export default class ExecuteCliUseCase {
     this.#profileSwitchDelayMs = 100;
   }
 
+  /**
+   * Executes a CLI command and returns the response.
+   * @param {string} command - The CLI command to execute.
+   * @returns {Promise<string>} The output of the command.
+   * @throws {Error} If the device fails to respond or disconnects unexpectedly.
+   */
   async execute(command) {
     let globalTimeout = null;
 
     const executeInner = async () => {
-      // 1. Connect
       await this.#controller.connect();
 
-      // 2. Ensuring we are ready (wait for prompt event if not already at prompt)
-      if (!this.#controller.buffer.endsWith(this.#prompt)) {
-        try {
-          await this.#controller.waitFor(this.#prompt, 500); // Wait briefly just in case
-        } catch (e) {
-          // Ignore timeout, FC is likely ready anyway
-        }
-      }
-
-      // 3. Hardware readiness delay
       const waitTime = command.toLowerCase().startsWith('profile')
         ? this.#profileSwitchDelayMs
         : this.#lineDelayMs;
       await delay(waitTime);
 
-      // 4. Send command
-      await this.#controller.clearBuffer(); // Clear previous session noise
+      await this.#controller.clearBuffer();
       await this.#controller.sendRaw(`${command}\n`);
 
-      // 5. Handle Reboot and DFU Commands
       const rebootCommands = ['save', 'reboot', 'exit'];
       const dfuCommands = ['bl', 'defaults'];
       const isReboot = rebootCommands.includes(command.trim().toLowerCase());
@@ -62,18 +55,14 @@ export default class ExecuteCliUseCase {
         }
       }
 
-      // 6. Wait for the NEXT prompt event
       try {
-        await this.#controller.waitFor(this.#prompt, 1500); // reduced timeout to 1.5s
+        await this.#controller.waitFor(this.#prompt, 1500);
       } catch (err) {
         if (err.message.includes('Connection lost')) {
           throw err;
         }
-        // If it's a timeout, it just means the FC didn't output a prompt "# ".
-        // We will process whatever is in the buffer!
       }
 
-      // Debounce for final line arrival
       await delay(100);
 
       const parsed = CliParser.parse(this.#controller.buffer);
@@ -82,7 +71,6 @@ export default class ExecuteCliUseCase {
         .filter((p) => p.type === 'DATA' || p.type === 'ECHO' || p.type === 'HEADER')
         .map((p) => p.content);
 
-      // Filter out command echo (exact match required)
       if (outputData.length > 0) {
         const firstLine = outputData[0].trim().toLowerCase();
         const cmd = command.trim().toLowerCase();

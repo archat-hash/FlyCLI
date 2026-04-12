@@ -15,7 +15,6 @@ export default class CliParser {
       const trimmed = line.trim();
       if (!trimmed) return;
 
-      // 1. Betaflight CLI prompt is exactly "# "
       if (line === '# ') {
         results.push({ type: 'PROMPT', content: '# ' });
       } else if (line.includes('rate/hz') || line.includes('max/us') || line.includes('avg/us')) {
