@@ -1,7 +1,6 @@
 import CliParser from '../../src/domain/CliParser.js';
 
 describe('CliParser — Unit Tests', () => {
-
   it('should identify banners, data, and prompt', () => {
     const raw = 'version\n### Betaflight / 4.4.0\n# status\n# ';
     const results = CliParser.parse(raw);
@@ -10,7 +9,7 @@ describe('CliParser — Unit Tests', () => {
       { type: 'DATA', content: 'version' },
       { type: 'BANNER', content: '### Betaflight / 4.4.0' },
       { type: 'DATA', content: 'status' },
-      { type: 'PROMPT', content: '# ' }
+      { type: 'PROMPT', content: '# ' },
     ]);
   });
 
@@ -22,7 +21,7 @@ describe('CliParser — Unit Tests', () => {
       { type: 'DATA', content: 'tasks' },
       { type: 'HEADER', content: 'Task list             rate/hz  max/us  avg/us maxload avgload  total/ms   late    run reqd/us' },
       { type: 'DATA', content: '00 - (         SYSTEM)     10       1       0    0.0%    0.0%         7      0    115' },
-      { type: 'PROMPT', content: '# ' }
+      { type: 'PROMPT', content: '# ' },
     ]);
   });
 });

@@ -49,11 +49,11 @@ describe('ExecuteCliUseCase — BDD Style', () => {
     const executePromise = useCase.execute('version');
 
     // FC responds to MSP API VERSION or we just send banner
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => { setTimeout(r, 50); });
     dataCallback(Buffer.from('##CLI\r\n# CLI ###\r\nCLI\r\n# '));
 
     // Stage 2: Data response
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => { setTimeout(r, 300); });
     dataCallback(Buffer.from('version\r\nCLI\r\n# Betaflight / STM32F411\r\nCLI\r\n# '));
 
     const result = await executePromise;

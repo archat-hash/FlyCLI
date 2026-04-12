@@ -19,11 +19,9 @@ const { default: executeCommand } = await import('../../src/commands/execute.js'
 describe('executeCommand — Timeout Reproduction', () => {
   let mockPort;
   let dataCallback;
-  let mockWrite;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockWrite = jest.fn();
     mockPort = {
       on: jest.fn((event, cb) => {
         if (event === 'data') dataCallback = cb;
@@ -46,19 +44,19 @@ describe('executeCommand — Timeout Reproduction', () => {
       '/dev/tty.usbmodem1',
       '115200',
       'version',
-      { json: true }
+      { json: true },
     );
 
     const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => { setTimeout(r, 50); });
     dataCallback(Buffer.from('CLI\r\n# '));
 
     // Stage 2: Fragmented Response
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => { setTimeout(r, 300); });
     dataCallback(Buffer.from('version\r\nCLI\r\n# Betaflight / STM32F411\r\n'));
 
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => { setTimeout(r, 100); });
     dataCallback(Buffer.from('CLI\r\n# '));
 
     await cmdPromise;

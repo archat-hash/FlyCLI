@@ -1,9 +1,13 @@
 import ExecuteCliUseCase from './ExecuteCliUseCase.js';
 
 export default class GetHealthCheckUseCase {
+  #controller;
+
+  #executeUseCase;
+
   constructor(flightController) {
-    this.controller = flightController;
-    this.executeUseCase = new ExecuteCliUseCase(this.controller);
+    this.#controller = flightController;
+    this.#executeUseCase = new ExecuteCliUseCase(this.#controller);
   }
 
   async execute() {
@@ -17,7 +21,7 @@ export default class GetHealthCheckUseCase {
 
     const tryExecute = async (cmd) => {
       try {
-        return await this.executeUseCase.execute(cmd);
+        return await this.#executeUseCase.execute(cmd);
       } catch (error) {
         report.errors.push(`Error executing '${cmd}': ${error.message}`);
         return null;

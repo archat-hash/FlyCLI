@@ -14,6 +14,6 @@ module.exports = {
     }
   ],
   options: {
-    tsPreCompilationDeps: true
+    tsPreCompilationDeps: false
   }
 };

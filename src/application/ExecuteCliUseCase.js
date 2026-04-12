@@ -5,11 +5,19 @@ const delay = (ms) => new Promise((resolve) => {
 });
 
 export default class ExecuteCliUseCase {
+  #controller;
+
+  #prompt;
+
+  #lineDelayMs;
+
+  #profileSwitchDelayMs;
+
   constructor(flightController) {
-    this.controller = flightController;
-    this.prompt = '# ';
-    this.lineDelayMs = 5;
-    this.profileSwitchDelayMs = 100;
+    this.#controller = flightController;
+    this.#prompt = '# ';
+    this.#lineDelayMs = 5;
+    this.#profileSwitchDelayMs = 100;
   }
 
   async execute(command) {
@@ -17,29 +25,29 @@ export default class ExecuteCliUseCase {
 
     const executeInner = async () => {
       // 1. Connect
-      await this.controller.connect();
+      await this.#controller.connect();
 
       // 2. Ensuring we are ready (wait for prompt event if not already at prompt)
-      if (!this.controller.buffer.endsWith(this.prompt)) {
-        await this.controller.waitFor(this.prompt);
+      if (!this.#controller.buffer.endsWith(this.#prompt)) {
+        await this.#controller.waitFor(this.#prompt);
       }
 
       // 3. Hardware readiness delay
       const waitTime = command.toLowerCase().startsWith('profile')
-        ? this.profileSwitchDelayMs
-        : this.lineDelayMs;
+        ? this.#profileSwitchDelayMs
+        : this.#lineDelayMs;
       await delay(waitTime);
 
       // 4. Send command
-      this.controller.clearBuffer(); // Clear previous session noise
-      await this.controller.sendRaw(`${command}\n`);
+      this.#controller.clearBuffer(); // Clear previous session noise
+      await this.#controller.sendRaw(`${command}\n`);
 
       // 5. Handle Reboot Commands
       const rebootCommands = ['save', 'reboot', 'exit'];
       if (rebootCommands.includes(command.toLowerCase())) {
         try {
           // Wait for disconnect as proof of reboot (timeout 3s as per plan)
-          await this.controller.waitForDisconnect(3000);
+          await this.#controller.waitForDisconnect(3000);
           return 'Rebooting...';
         } catch (e) {
           throw new Error(`Reboot failed: ${e.message}`);
@@ -47,12 +55,12 @@ export default class ExecuteCliUseCase {
       }
 
       // 5. Wait for the NEXT prompt event
-      await this.controller.waitFor(this.prompt);
+      await this.#controller.waitFor(this.#prompt);
 
       // Debounce for final line arrival
       await delay(300);
 
-      const parsed = CliParser.parse(this.controller.buffer);
+      const parsed = CliParser.parse(this.#controller.buffer);
 
       const outputData = parsed
         .filter((p) => p.type === 'DATA' || p.type === 'ECHO' || p.type === 'HEADER')
@@ -76,7 +84,7 @@ export default class ExecuteCliUseCase {
       return await Promise.race([executeInner(), timeoutPromise]);
     } finally {
       if (globalTimeout) clearTimeout(globalTimeout);
-      await this.controller.disconnect();
+      await this.#controller.disconnect();
     }
   }
 }

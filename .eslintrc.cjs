@@ -12,6 +12,6 @@ module.exports = {
   rules: {
     'no-console': 'off',
     'import/extensions': 'off',
-    'no-underscore-dangle': 'off',
+    'no-underscore-dangle': 'error',
   },
 };
