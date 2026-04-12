@@ -17,122 +17,141 @@ graph TD
 ---
 
 ## 2. Logical View (Clean Architecture)
-Ми використовуємо гексагональну архітектуру (Ports and Adapters) для забезпечення незалежності бізнес-логіки від особливостей реалізації послідовного порту.
+Ми використовуємо гексагональну архітектуру (Ports and Adapters) для забезпечення незалежності бізнес-логіки.
 
 ```mermaid
-classDiagram
-    class IFlightController {
-        <<interface>>
-        +connect(port)
-        +execute(command)
-        +waitForDisconnect()
-    }
-    class SerialFlightController {
-        <<infrastructure>>
-        -SerialPort port
-        -EventEmitter events
-    }
-    class ExecuteCliUseCase {
-        <<application>>
-        -IFlightController controller
-        +execute(command)
-    }
-    IFlightController <|.. SerialFlightController
-    ExecuteCliUseCase --> IFlightController
+graph TD
+    subgraph Delivery [Delivery Layer / Composition Root]
+        CLI[src/interfaces/cli/*.js]
+    end
+    
+    subgraph Application [Application Layer]
+        UC[ExecuteCliUseCase]
+    end
+    
+    subgraph Infrastructure [Infrastructure Layer]
+        SFC[SerialFlightController]
+    end
+    
+    subgraph Domain [Domain Layer]
+        IFC((IFlightController))
+        CP[CliParser]
+    end
+
+    CLI -- "Injects" --> SFC
+    CLI -- "Initializes" --> UC
+    UC -- "Uses" --> IFC
+    SFC -- "Implements" --> IFC
+    UC -- "Uses" --> CP
 ```
 
 ### Рівні (Layers):
 - **Domain Layer**: Сутності та інтерфейси (`IFlightController`, `CliParser`).
-- **Application Layer**: Use Cases, що реалізують конкретні бізнес-сценарії (`ExecuteCliUseCase`, `GetHealthCheckUseCase`).
+- **Application Layer**: Use Cases, що реалізують конкретні бізнес-сценарії (`ExecuteCliUseCase`).
 - **Infrastructure Layer**: Реалізація Serial-зв'язку та Port Scanning.
-- **Delivery Layer (Composition Root)**: CLI інтерфейс у `src/interfaces/cli/`.
+- **Delivery Layer (Composition Root)**: CLI інтерфейс у `src/interfaces/cli/`. Це єдине місце, де інфраструктура з'єднується з додатком (Dependency Injection).
 
 ---
 
-## 2.1. Composition Root & Dependency Injection
-Згідно з принципами Clean Architecture, ми використовуємо **Delivery Layer** як **Composition Root**. 
+## 3. State Machine (Command Lifecycle)
+Процес виконання команди CLI проходить через кілька станів для гарантування стабільності та уникнення "висання" порту.
 
-> [!IMPORTANT]
-> Тільки файли в `src/interfaces/cli/` мають право імпортувати як `application`, так і `infrastructure`. Саме тут відбувається інстанціювання конкретних реалізацій (наприклад, `SerialFlightController`) та їх передача (Injection) в Use Cases.
-
-Це дозволяє шару **Application** залишатися "стерильним" та не знати нічого про деталі реалізації заліза чи бібліотек логування.
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Connecting : execute()
+    Connecting --> MspHandshake : connected
+    MspHandshake --> CliMode : MSP ACK
+    CliMode --> WaitingPrompt : Send command
+    WaitingPrompt --> ProcessingOutput : Prompt found (RegEx)
+    ProcessingOutput --> Idle : Success / Fail
+    ProcessingOutput --> Rebooting : "save" command detected
+    Rebooting --> [*] : Port Disconnected
+    ProcessingOutput --> [*] : Global Timeout (15s)
+```
 
 ---
 
-## 3. Process View (Hardware Interaction)
-Особлива увага приділена стабільності при роботі з залізом. FlyCLI реалізує стійку обробку асинхронних подій.
-
-### Сценарій "Execute Command & Reboot":
-Коли надсилається команда `save`, FlyCLI переходить у режим очікування розриву з'єднання (VCP disconnect), що є критичним для STM32-базованих систем.
+## 4. Process View (Hardware Interaction)
+FlyCLI реалізує стійку обробку асинхронних подій та фрагментованих даних.
 
 ```mermaid
 sequenceDiagram
-    participant App as ExecuteCliUseCase
-    participant Controller as SerialFlightController
-    participant Hardware as Chip (STM32)
+    participant CLI as interfaces/cli/execute.js
+    participant UC as ExecuteCliUseCase
+    participant SFC as SerialFlightController
+    participant HW as Flight Controller
 
-    App->>Controller: execute("save")
-    Controller->>Hardware: send("save\n")
-    Note over Hardware: Rebooting...
-    Hardware-->>Controller: VCP Disconnect
-    Controller->>App: resolve("Rebooting...")
-    App->>User: Success
+    CLI->>SFC: new SerialFlightController(...)
+    CLI->>UC: new ExecuteCliUseCase(SFC, ...)
+    CLI->>UC: execute("status")
+
+    UC->>SFC: connect()
+    SFC->>HW: MSP Handshake (API_VERSION)
+    HW-->>SFC: ACK (0x65)
+
+    UC->>SFC: sendRaw("status\n")
+    HW-->>SFC: Data Chunks...
+    HW-->>SFC: Final Prompt "# "
+
+    SFC-->>UC: Full Response String
+    UC-->>CLI: Parsed JSON/Text
+    CLI->>User: Display Status Output
 ```
 
 ---
 
-## 4. Development View (Standards & Tools)
-Проєкт дотримується принципів високої якості коду, що робить його AI-Ready та легким для підтримки.
+## 5. Development View (Standards & Tools)
+Проєкт дотримується принципів високої якості коду для забезпечення AI-Ready статусу.
 
 - **Linting**: Airbnb JavaScript Style Guide (Strict).
 - **Module System**: ESM (ECMAScript Modules).
-- **Testing Strategy (Behavioral focus over Line Coverage)**:
-    - **Unit (Jest)**: Покриває всі значущі гілки поведінки (behavioral branches), включаючи таймаути, розриви з'єднання та помилки апаратного перезавантаження. 
-    - **Integration (Jest)**: Технічна верифікація інфраструктури та автоматизований контроль архітектурних шарів через **dependency-cruiser**.
-    - **BDD (Cucumber)**: **34 сценарії** повної функціональної верифікації на реальному залізі (STM32F411). Це основний доказ стабільності для Production-середовища.
-- **Resilience**: Кожна операція захищена таймаутами та механізмами очищення буферів (flush) для запобігання "висанню" CLI в реальних умовах.
+- **Testing Strategy**:
+    - **Unit (Jest)**: Покриває всі значущі гілки поведінки, включаючи таймаути та розриви з'єднання.
+    - **Integration (Jest)**: Контроль архітектурних шарів через **dependency-cruiser**.
+    - **BDD (Cucumber)**: **34 сценарії** повної функціональної верифікації на реальному залізі (STM32F411).
+- **Resilience**: захист таймаутами та механізмами очищення буферів (flush).
 
 ---
 
-## 5. Physical View (Deployment)
-FlyCLI розгортається як Node.js інструмент на хост-машині, що з'єднана з Flight Controller через USB-кабель (COM/TTY Port).
+## 6. Physical View (Deployment)
+FlyCLI розгортається як Node.js інструмент, що з'єднаний через USB.
 
 ```mermaid
-deployment
-    node HostMachine [Host Machine (macOS/Linux)] {
-        instance FlyCLI_App [Node.js Runtime]
-    }
-    node FlightController [STM32 Flight Controller] {
-        instance Betaflight [Betaflight Firmware]
-    }
-    HostMachine -- "USB (Serial VCP)" --> FlightController
+graph LR
+    subgraph Host [Host Machine]
+        Node[Node.js Runtime]
+        FlyCLI[FlyCLI App]
+        Serial[System Serial APIs]
+    end
+    
+    subgraph Device [Hardware]
+        STM32[STM32 Chip]
+        BF[Betaflight FW]
+    end
+
+    FlyCLI --> Node
+    Node --> Serial
+    Serial -- "USB / Serial VCP" --> STM32
+    STM32 --> BF
 ```
 
 ---
 
-## 6. Implementation Reality (Bottom-Up Challenges)
+## 7. Implementation Reality (Bottom-Up Challenges)
 
-На відміну від "ідеальної" схеми Clean Architecture, реальна робота з польотними контролерами через USB-VCP (Virtual COM Port) вимагає обробки специфічних апаратних нюансів.
+### 7.1. Фрагментація даних (Serial Chunks)
+Реальність роботи з USB-VCP вимагає обробки чанків по 64/128 байт. `SerialFlightController` накопичує дані в `#buffer` до появи паттерну промпта.
 
-### 6.1. Проблема фрагментації даних (Serial Chunks)
-**Теорія:** Ми відправляємо команду і отримуємо відповідь.
-**Реальність:** Дані від Betaflight приходять шматками (chunks) по 64 або 128 байт. Символ промпта `# ` може прийти в середині одного чанка або бути розірваним між двома.
-**Рішення:** `SerialFlightController` реалізує внутрішню машину станів на базі `EventEmitter`, яка накопичує дані в `#buffer` до моменту повної відповідності регулярному виразу промпта.
+### 7.2. Дебаунс (Fake Prompts)
+В `ExecuteCliUseCase` додано затримку **300мс** після детекції промпта для збору "хвоста" даних, які могли затриматися в буфері.
 
-### 6.2. Проблема фальшивих промптів та Debounce
-**Теорія:** Поява `# ` означає кінець виводу.
-**Реальність:** Betaflight може надіслати `# `, а через 10-20 мс дослати останні рядки логу (наприклад, у команді `diff`).
-**Рішення:** В `ExecuteCliUseCase` додано примусову затримку (debounce) **300мс** після детекції промпта. Це гарантує, що ми зчитаємо весь хвіст даних, які могли затриматися в USB-буфері чіпа.
-
-### 6.3. Hardware Handshake (MSP + CLI)
-**Теорія:** Відкриваємо порт і пишемо `#`.
-**Реальність:** Якщо чіп щойно підключений, він може ігнорувати перші символи в буфері UART.
-**Рішення:** Ми спочатку виконуємо **MSP Handshake** (запит `API_VERSION`). Це змушує прошивку ініціалізувати USB-стек для передачі даних. Тільки після успішної MSP-відповіді ми намагаємося увійти в CLI режим.
+### 7.3. Hardware Handshake
+MSP Handshake при старті змушує прошивку ініціалізувати USB-стек, що критично для надійного входу в CLI режим на деяких платах (наприклад, STM32F411 Black Pill).
 
 ---
 
 ## Key Design Decisions (ADR Summary)
-- **Prompt Detection**: Використання регулярних виразів для детекції `#` або `CLI` банера замість фіксованих пауз.
-- **Echo Suppression**: Автоматичне видалення відлуння команди з результатів парсингу для чистоти даних.
-- **Resilient Parsing**: `CliParser` пріоритезує заголовки таблиць, що дозволяє AI коректно розпізнавати стани сенсорів та задач.
-- **Strict ESM over TS**: Свідомий вибір чистого JavaScript (ESM) для спрощення запуску в обмежених AI-контейнерах без етапу транспайляції.
+- **Prompt Detection**: Динамічна детекція через RegEx.
+- **Echo Suppression**: Видалення відлуння команди.
+- **Strict ESM**: Чистий JS без етапу транспайляції.
