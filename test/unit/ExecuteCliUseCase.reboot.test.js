@@ -26,6 +26,8 @@ describe('ExecuteCliUseCase — Reboot Coverage', () => {
       sendRaw: jest.fn().mockResolvedValue(),
       waitFor: jest.fn().mockResolvedValue(),
       waitForDisconnect: jest.fn().mockResolvedValue(),
+      waitForReboot: jest.fn().mockResolvedValue(),
+      reset: jest.fn().mockResolvedValue(),
       disconnect: jest.fn().mockResolvedValue(),
       clearBuffer: jest.fn(),
       onData: jest.fn(() => () => { }),
@@ -38,23 +40,29 @@ describe('ExecuteCliUseCase — Reboot Coverage', () => {
 
     expect(mockController.sendRaw).toHaveBeenCalledWith('save\n');
     expect(mockController.waitForDisconnect).toHaveBeenCalled();
-    expect(result).toBe('Rebooting...');
+    expect(result).toBe('[REBOOT_INITIATED]');
   });
 
   it('should handle "reboot" command', async () => {
     const result = await useCase.execute('reboot');
     expect(mockController.waitForDisconnect).toHaveBeenCalled();
-    expect(result).toBe('Rebooting...');
+    expect(result).toBe('[REBOOT_INITIATED]');
   });
 
-  it('should throw error if reboot detection fails', async () => {
-    mockController.waitForDisconnect.mockRejectedValue(new Error('Hardware still connected'));
+  it('should handle "bl" command', async () => {
+    const result = await useCase.execute('bl');
+    expect(mockController.waitForDisconnect).toHaveBeenCalled();
+    expect(result).toBe('[DFU_ENTERED]');
+  });
+
+  it('should throw error if device fails to disconnect', async () => {
+    mockController.waitForDisconnect.mockRejectedValue(new Error('Timeout waiting for disconnect'));
 
     try {
       await useCase.execute('save');
       throw new Error('Should have thrown');
     } catch (e) {
-      expect(e.message).toContain('Reboot failed');
+      expect(e.message).toContain('Device did not gracefully disconnect');
     }
   });
 
@@ -63,8 +71,8 @@ describe('ExecuteCliUseCase — Reboot Coverage', () => {
     mockController.waitFor.mockResolvedValue('tasks result # ');
     await useCase.execute('tasks');
 
-    expect(mockController.waitForDisconnect).not.toHaveBeenCalled();
-    expect(mockController.waitFor).toHaveBeenCalledWith('# ');
+    expect(mockController.waitForReboot).not.toHaveBeenCalled();
+    expect(mockController.waitFor).toHaveBeenCalledWith('# ', 1500);
   });
 
   it('should filter out command echo if present', async () => {

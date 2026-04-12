@@ -8,6 +8,9 @@ export default class PortScanner {
      */
   async listPorts() {
     try {
+      if (process.env.FLYCLI_OVERRIDE_PORTS) {
+        return JSON.parse(process.env.FLYCLI_OVERRIDE_PORTS);
+      }
       const ports = await SerialPort.list();
       return ports.map((port) => ({
         path: port.path,

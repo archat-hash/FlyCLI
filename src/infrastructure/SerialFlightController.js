@@ -3,12 +3,14 @@ import EventEmitter from 'events';
 import IFlightController from '../domain/IFlightController.js';
 import MSP from '../core/msp.js';
 
+import ConnectionState from '../domain/ConnectionState.js';
+
 export default class SerialFlightController extends IFlightController {
   #path;
 
   #baudRate;
 
-  #cliMode;
+  #state;
 
   #buffer;
 
@@ -20,7 +22,7 @@ export default class SerialFlightController extends IFlightController {
     super();
     this.#path = path;
     this.#baudRate = baudRate;
-    this.#cliMode = false;
+    this.#state = ConnectionState.DISCONNECTED;
     this.#buffer = '';
     this.#port = null;
     this.#events = new EventEmitter();
@@ -36,6 +38,18 @@ export default class SerialFlightController extends IFlightController {
       });
     }
     this.#port.on('data', (data) => this.handleData(data));
+    this.#port.on('close', () => this.handleClose());
+    this.#port.on('error', (err) => this.handleError(err));
+  }
+
+  handleClose() {
+    this.#state = ConnectionState.DISCONNECTED;
+    this.#events.emit('connection_lost');
+  }
+
+  handleError(err) {
+    console.error(`Serial port error on ${this.#path}: ${err.message}`);
+    this.handleClose();
   }
 
   handleData(data) {
@@ -52,39 +66,64 @@ export default class SerialFlightController extends IFlightController {
     }
   }
 
-  clearBuffer() {
+  async clearBuffer() {
     this.#buffer = '';
-    if (this.#port && this.#port.isOpen && typeof this.#port.flush === 'function') {
-      this.#port.flush((err) => {
-        if (err) {
-          console.error(`Error flushing port: ${err.message}`);
-        }
-      });
-    }
+    return new Promise((resolve) => {
+      if (this.#port && this.#port.isOpen && typeof this.#port.flush === 'function') {
+        this.#port.flush((err) => {
+          if (err) {
+            console.error(`Error flushing port: ${err.message}`);
+          }
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
   }
 
-  async waitFor(pattern, timeoutMs = 5000) {
+  async waitFor(pattern, timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
       let timeout;
+
+      let cleanup;
+
+      const onConnectionLost = () => {
+        cleanup();
+        reject(new Error(`Connection lost while waiting for pattern: ${pattern}`));
+      };
+
       const onData = () => {
         const match = typeof pattern === 'string'
           ? this.#buffer.includes(pattern)
           : this.#buffer.match(pattern);
 
         if (match) {
-          clearTimeout(timeout);
-          this.#events.removeListener('data', onData);
+          cleanup();
           resolve(this.#buffer);
         }
       };
 
-      timeout = setTimeout(() => {
+      cleanup = () => {
+        clearTimeout(timeout);
         this.#events.removeListener('data', onData);
+        this.#events.removeListener('connection_lost', onConnectionLost);
+      };
+
+      timeout = setTimeout(() => {
+        cleanup();
         reject(new Error(`Timeout waiting for pattern: ${pattern}`));
       }, timeoutMs);
+      timeout.unref();
 
       this.#events.on('data', onData);
+      this.#events.on('connection_lost', onConnectionLost);
       onData(); // Check immediate
+
+      // Check if already disconnected
+      if (this.#state === ConnectionState.DISCONNECTED && (!this.#port || !this.#port.isOpen)) {
+        onConnectionLost();
+      }
     });
   }
 
@@ -103,6 +142,7 @@ export default class SerialFlightController extends IFlightController {
         this.#port.removeListener('error', onDisconnect);
         reject(new Error('Timeout waiting for disconnect'));
       }, timeoutMs);
+      timeout.unref();
 
       this.#port.once('close', onDisconnect);
       this.#port.once('error', onDisconnect);
@@ -114,25 +154,53 @@ export default class SerialFlightController extends IFlightController {
     });
   }
 
-  async connect() {
-    if (this.#port && this.#port.isOpen) return Promise.resolve();
+  async reset() {
+    this.#state = ConnectionState.DISCONNECTED;
+    await this.clearBuffer();
+    this.#events.removeAllListeners();
+    if (this.#port && this.#port.isOpen) {
+      return new Promise((resolve) => {
+        this.#port.close(() => resolve());
+      });
+    }
+    return Promise.resolve();
+  }
 
+  async connect(retries = 3) {
+    if (this.#state === ConnectionState.CLI_MODE || this.#state === ConnectionState.CONNECTED) {
+      return undefined;
+    }
+
+    this.#state = ConnectionState.CONNECTING;
+    try {
+      await this.#attemptConnect();
+      this.#state = ConnectionState.CONNECTED;
+      await this.attemptCliEntry();
+      return undefined;
+    } catch (err) {
+      if (retries > 1) {
+        await new Promise((resolve) => { setTimeout(resolve, 1000).unref(); });
+        return this.connect(retries - 1);
+      }
+      throw err;
+    }
+  }
+
+  #attemptConnect() {
     return new Promise((resolve, reject) => {
-      this.#port.open(async (err) => {
+      if (this.#port.isOpen) {
+        resolve();
+        return;
+      }
+      this.#port.open((err) => {
         if (err) {
           reject(err);
           return;
         }
-
-        try {
-          this.clearBuffer();
-          await this.sendRaw(MSP.encode(MSP.CMD.API_VERSION));
-
-          await this.attemptCliEntry();
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
+        this.clearBuffer()
+          .then(() => this.sendRaw(MSP.encode(MSP.CMD.API_VERSION)))
+          .then(resolve)
+          .catch(reject);
       });
     });
   }
@@ -147,14 +215,16 @@ export default class SerialFlightController extends IFlightController {
     try {
       // Wait for either CLI banner or prompt (handling potential space-less echoes)
       await this.waitFor(/CLI|#\s?/, 1000);
-      this.#cliMode = true;
+      this.#state = ConnectionState.CLI_MODE;
     } catch (e) {
       await this.attemptCliEntry(retries - 1);
     }
   }
 
   async disconnect() {
-    this.clearBuffer();
+    if (this.#state === ConnectionState.DISCONNECTED) return Promise.resolve();
+    this.#state = ConnectionState.DISCONNECTING;
+    await this.clearBuffer();
     this.#events.removeAllListeners();
 
     return new Promise((resolve) => {
@@ -163,11 +233,11 @@ export default class SerialFlightController extends IFlightController {
           if (err) {
             console.error(`Error closing port: ${err.message}`);
           }
-          this.#cliMode = false;
+          this.#state = ConnectionState.DISCONNECTED;
           resolve();
         });
       } else {
-        this.#cliMode = false;
+        this.#state = ConnectionState.DISCONNECTED;
         resolve();
       }
     });
@@ -196,6 +266,6 @@ export default class SerialFlightController extends IFlightController {
   }
 
   get isCliMode() {
-    return this.#cliMode;
+    return this.#state === ConnectionState.CLI_MODE;
   }
 }

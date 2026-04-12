@@ -1,10 +1,21 @@
+import fs from 'fs';
 import SerialFlightController from '../../src/infrastructure/SerialFlightController.js';
 import ExecuteCliUseCase from '../../src/application/ExecuteCliUseCase.js';
 import CliParser from '../../src/domain/CliParser.js';
+import PortScanner from '../../src/infrastructure/PortScanner.js';
 
 describe('Integration Test: Connection Stability', () => {
   it('should detect the exact failure point', async () => {
-    const port = '/dev/tty.usbmodem0x80000001';
+    const scanner = new PortScanner();
+    const ports = await scanner.listPorts();
+    const device = ports.find((p) => p.isLikelyBetaflight);
+    const port = process.env.TEST_PORT || (device ? device.path : null);
+
+    if (!port || !fs.existsSync(port)) {
+      console.warn(`[SKIPPED] Integration test skipped: Physical device not found at ${port || 'any port'}`);
+      return;
+    }
+
     const controller = new SerialFlightController(port, 115200);
     const useCase = new ExecuteCliUseCase(controller, new CliParser());
 

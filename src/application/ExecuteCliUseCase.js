@@ -29,7 +29,11 @@ export default class ExecuteCliUseCase {
 
       // 2. Ensuring we are ready (wait for prompt event if not already at prompt)
       if (!this.#controller.buffer.endsWith(this.#prompt)) {
-        await this.#controller.waitFor(this.#prompt);
+        try {
+          await this.#controller.waitFor(this.#prompt, 500); // Wait briefly just in case
+        } catch (e) {
+          // Ignore timeout, FC is likely ready anyway
+        }
       }
 
       // 3. Hardware readiness delay
@@ -39,26 +43,38 @@ export default class ExecuteCliUseCase {
       await delay(waitTime);
 
       // 4. Send command
-      this.#controller.clearBuffer(); // Clear previous session noise
+      await this.#controller.clearBuffer(); // Clear previous session noise
       await this.#controller.sendRaw(`${command}\n`);
 
-      // 5. Handle Reboot Commands
+      // 5. Handle Reboot and DFU Commands
       const rebootCommands = ['save', 'reboot', 'exit'];
-      if (rebootCommands.includes(command.toLowerCase())) {
+      const dfuCommands = ['bl', 'defaults'];
+      const isReboot = rebootCommands.includes(command.trim().toLowerCase());
+      const isDfu = dfuCommands.includes(command.trim().toLowerCase());
+
+      if (isReboot || isDfu) {
         try {
-          // Wait for disconnect as proof of reboot (timeout 3s as per plan)
-          await this.#controller.waitForDisconnect(3000);
-          return 'Rebooting...';
+          await this.#controller.waitForDisconnect(5000);
+          await this.#controller.reset();
+          return isDfu ? '[DFU_ENTERED]' : '[REBOOT_INITIATED]';
         } catch (e) {
-          throw new Error(`Reboot failed: ${e.message}`);
+          throw new Error(`Device did not gracefully disconnect after command. Error: ${e.message}`);
         }
       }
 
-      // 5. Wait for the NEXT prompt event
-      await this.#controller.waitFor(this.#prompt);
+      // 6. Wait for the NEXT prompt event
+      try {
+        await this.#controller.waitFor(this.#prompt, 1500); // reduced timeout to 1.5s
+      } catch (err) {
+        if (err.message.includes('Connection lost')) {
+          throw err;
+        }
+        // If it's a timeout, it just means the FC didn't output a prompt "# ".
+        // We will process whatever is in the buffer!
+      }
 
       // Debounce for final line arrival
-      await delay(300);
+      await delay(100);
 
       const parsed = CliParser.parse(this.#controller.buffer);
 
@@ -66,9 +82,13 @@ export default class ExecuteCliUseCase {
         .filter((p) => p.type === 'DATA' || p.type === 'ECHO' || p.type === 'HEADER')
         .map((p) => p.content);
 
-      // Filter out command echo (it's always the first line if present)
-      if (outputData.length > 0 && outputData[0].toLowerCase() === command.toLowerCase()) {
-        outputData.shift();
+      // Filter out command echo (exact match required)
+      if (outputData.length > 0) {
+        const firstLine = outputData[0].trim().toLowerCase();
+        const cmd = command.trim().toLowerCase();
+        if (firstLine === cmd) {
+          outputData.shift();
+        }
       }
 
       return outputData.length === 0 ? '' : outputData.join('\n');
@@ -79,6 +99,7 @@ export default class ExecuteCliUseCase {
         globalTimeout = setTimeout(() => {
           reject(new Error(`Timeout waiting for CLI response: ${command}`));
         }, 15000);
+        globalTimeout.unref();
       });
 
       return await Promise.race([executeInner(), timeoutPromise]);

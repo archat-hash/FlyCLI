@@ -22,5 +22,6 @@ export default async function executeCommand(port, baudRate, cmd, options) {
     }
   } catch (err) {
     console.error(`Error: ${err.message}`);
+    await controller.disconnect();
   }
 }

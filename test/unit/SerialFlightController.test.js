@@ -57,11 +57,15 @@ describe('SerialFlightController', () => {
 
   test('connect() should reject if port open fails', async () => {
     mockPort.open.mockImplementationOnce((cb) => setTimeout(() => cb(new Error('Open failed')), 0));
-    await expect(controller.connect()).rejects.toThrow('Open failed');
-  });
+    await expect(controller.connect(1)).rejects.toThrow('Open failed');
+  }, 10000);
 
   test('disconnect() should close port and reset state', async () => {
-    mockPort.isOpen = true;
+    const connectPromise = controller.connect();
+    await new Promise((resolve) => { setTimeout(resolve, 50); });
+    if (portDataListener) portDataListener(Buffer.from('\r\nCLI\r\n# '));
+    await connectPromise;
+
     await controller.disconnect();
     expect(mockPort.close).toHaveBeenCalled();
     expect(controller.isCliMode).toBe(false);
