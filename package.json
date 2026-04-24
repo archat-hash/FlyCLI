@@ -1,6 +1,11 @@
 {
   "name": "flycli",
   "version": "1.0.0",
+  "description": "A reliable CLI tool for Betaflight flight controller interaction and automation.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/archat-hash/FlyCLI.git"
+  },
   "type": "module",
   "main": "index.js",
   "bin": {

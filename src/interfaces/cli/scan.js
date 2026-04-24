@@ -25,7 +25,7 @@ export default async function scanPorts(options) {
     console.log('-----------------------');
 
     ports.forEach((port) => {
-      const marker = port.isLikelyBetaflight ? '🚀 [Lately Betaflight]' : '  ';
+      const marker = port.isLikelyBetaflight ? '🚀 [Likely Betaflight]' : '  ';
       console.log(`${marker} ${port.path}`);
       console.log(`   Manufacturer: ${port.manufacturer}`);
       if (port.vendorId) console.log(`   VID: ${port.vendorId} PID: ${port.productId}`);

@@ -1,66 +1,66 @@
-# 🚁 FlyCLI: Твій дрон під повним контролем (та AI)
+# 🚁 FlyCLI: Your Drone Under Full Control (and AI)
 
-**FlyCLI** — це надійний консольний інструмент для автоматизованої взаємодії з польотними контролерами Betaflight. Спроектований для розробників, AI-агентів та пілотів, які цінують стабільність та автоматизацію.
+**FlyCLI** is a reliable command-line tool for automated interaction with Betaflight flight controllers. Designed for developers, AI agents, and pilots who value stability and automation.
 
 ---
 
-## 🚀 Встановлення та налаштування
+## 🚀 Installation and Setup
 
-Щоб використовувати `flycli` як глобальну команду з будь-якої папки:
+To use `flycli` as a global command from any folder:
 
 ```bash
-# 1. Клонуйте репозиторій та перейдіть у папку
-git clone https://github.com/oleh/FlyCLI.git
+# 1. Clone the repository and enter the folder
+git clone https://github.com/archat-hash/FlyCLI.git
 cd FlyCLI
 
-# 2. Встановіть залежності
+# 2. Install dependencies
 npm install
 
-# 3. Створіть симлінк для глобального виклику
+# 3. Create a symlink for global access
 npm link
 ```
 
-Тепер ви можете запускати інструмент просто командою `flycli` замість `./index.js`.
+Now you can run the tool simply with the `flycli` command instead of `./index.js`.
 
 ---
 
-## 🗺️ Навігація по документації
+## 🗺️ Documentation Navigation
 
-Для швидкого занурення в проєкт використовуйте наступні посилання:
+Use the following links for a quick dive into the project:
 
-*   🚀 **[Швидкий старт та Посібник користувача](docs/README.md)**  
-    *Як встановити, сканувати порти та виконувати команди.*
-*   🏗️ **[Архітектура та Дизайн-рішення](docs/ARCHITECTURE.md)**  
-    *Опис C4 моделі, Clean Architecture та механізмів стабільності зв'язку.*
-*   ⚠️ **[Важливі застереження та Безпека](docs/README.md#важливо)**  
-    *Обов'язково прочитайте перед використанням команди `defaults`.*
-*   🧪 **[Тестування та Верифікація](docs/README.md#тестування-та-надійність)**  
-    *Про запуск 40+ тестів на реальному залізі та в симуляції.*
+*   🚀 **[Quick Start and User Guide](docs/README.md)**  
+    *How to install, scan ports, and execute commands.*
+*   🏗️ **[Architecture and Design Decisions](docs/ARCHITECTURE.md)**  
+    *Description of the C4 model, Clean Architecture, and connection stability mechanisms.*
+*   ⚠️ **[Important Warnings and Safety](docs/README.md#important)**  
+    *Must read before using the `defaults` command.*
+*   🧪 **[Testing and Verification](docs/README.md#testing-and-reliability)**  
+    *About running 40+ tests on real hardware and in simulation.*
 
 ---
 
-## 🛠️ Команди (після `npm link`)
+## 🛠️ Commands (after `npm link`)
 
-| Команда | Опис |
+| Command | Description |
 | --- | --- |
-| `flycli scan` | Пошук підключених польотних контролерів |
-| `flycli execute <port> 115200 "status"` | Виконання CLI команди |
-| `flycli health` | Повний чекап системи (JSON звіт) |
+| `flycli scan` | Search for connected flight controllers |
+| `flycli execute <port> 115200 "status"` | Execute a CLI command |
+| `flycli health` | Complete system checkup (JSON report) |
 
 ---
 
-## 🔍 "Знизу вгору": Як це працює насправді
+## 🔍 "Bottom-Up": How It Actually Works
 
-На відміну від "ідеальних" схем, реальна взаємодія з польотним контролером має свої нюанси:
-- **Debounce 300ms**: Ми додали штучну затримку після отримання промпта `# `, оскільки Betaflight часто надсилає дані частинами, і промпт може з'явитися раніше, ніж долетять останні байты відповіді.
-- **Handshake MSP**: Перед входом у CLI ми виконуємо MSP-запит `API_VERSION`. Це не просто формальність — це дозволяє "прокинути" залізо та переконатися, що порт готовий до обміну даними.
-- **Чистий ESM**: Проєкт свідомо написаний на чистому JavaScript (ESM) без TypeScript, щоб мінімізувати кроки збірки та зробити його максимально легким для запуску в будь-якому оточенні Node.js.
+Unlike "ideal" schemes, real interaction with a flight controller has its nuances:
+- **Debounce 300ms**: We added a synthetic delay after receiving the `# ` prompt because Betaflight often sends data in chunks, and the prompt may appear before the last bytes of the response arrive.
+- **Handshake MSP**: Before entering CLI mode, we perform an MSP request `API_VERSION`. This is not just a formality — it allows "waking up" the hardware and ensuring the port is ready for data exchange.
+- **Pure ESM**: The project is intentionally written in pure JavaScript (ESM) without TypeScript to minimize build steps and make it as lightweight as possible to run in any Node.js environment.
 
 ---
 
 ## 🦾 AI-Ready
-FlyCLI розроблений для зручної роботи з Large Language Models. Використовуйте флаг `--json` для отримання структурованих даних, які ваш AI-агент зможе миттєво проаналізувати.
+FlyCLI is designed for convenient work with Large Language Models. Use the `--json` flag to get structured data that your AI agent can instantly analyze.
 
 ---
-*Створено для тих, хто любить літати і кодувати.* 🚁💨
+*Created for those who love to fly and code.* 🚁💨
 
