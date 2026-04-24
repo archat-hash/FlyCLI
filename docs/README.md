@@ -1,96 +1,96 @@
-# 🚀 FlyCLI: Швидкий старт та Посібник користувача
+# 🚀 FlyCLI: Quick Start and User Guide
 
-**FlyCLI** — це потужний консольний інструмент на базі Node.js, створений для надійної взаємодії з польотними контролерами Betaflight. 
+**FlyCLI** is a powerful Node.js-based command-line tool created for reliable interaction with Betaflight flight controllers.
 
 ---
 
-## 1. Встановлення
+## 1. Installation
 
-### Звичайний запуск
+### Standard Launch
 ```bash
-git clone https://github.com/oleh/FlyCLI.git
+git clone https://github.com/archat-hash/FlyCLI.git
 cd FlyCLI
 npm install
 ./index.js scan
 ```
 
-### Глобальна команда (рекомендовано)
-Щоб викликати `flycli` з будь-якого місця системи:
+### Global Command (Recommended)
+To call `flycli` from anywhere in the system:
 ```bash
 npm link
-# Тепер можна просто писати:
+# Now you can just type:
 flycli scan
 ```
 
 ---
 
-## 🔍 Як це працює "під капотом" (Bottom-Up)
+## 🔍 How it works "Under the Hood" (Bottom-Up)
 
-Хоча архітектурно FlyCLI виглядає ідеально, реальність роботи з залізом диктує свої правила:
+Although architecturally FlyCLI looks ideal, the reality of working with hardware dictates its own rules:
 
-### Потік даних та буферизація
-Польотні контролери надсилають дані чанками. Іноді символ промпта `# ` приходить в одному пакеті з даними, а іноді — через 50мс. FlyCLI використовує внутрішній буфер та `EventEmitter`, щоб збирати дані до появи паттерну.
+### Data Flow and Buffering
+Flight controllers send data in chunks. Sometimes the prompt symbol `# ` arrives in the same packet as the data, and sometimes — after 50ms. FlyCLI uses an internal buffer and `EventEmitter` to collect data until the pattern appears.
 
-### Чому саме 300мс затримки?
-У коді ви знайдете `await delay(300)` після отримання промпта. Це "захист від дурня". Деякі команди (як `diff`) можуть завершити вивід вже після того, як Betaflight відправив фінальний `# `. Без цієї затримки ви отримаєте неповну відповідь.
+### Why exactly 300ms delay?
+In the code, you will find `await delay(300)` after receiving the prompt. This is "foolproof" protection. Some commands (like `diff`) may finish output already after Betaflight has sent the final `# `. Without this delay, you will get an incomplete response.
 
-### Handshake: Навіщо MSP?
-Betaflight не завжди готовий до CLI відразу. Ми спочатку надсилаємо MSP пакет (`API_VERSION`). Це змушує прошивку ініціалізувати USB-буфери та "прокинутися" для діалогу.
-
----
-
-## 🤖 Використання з AI-агентом
-
-FlyCLI ідеально підходить для того, щоб ШІ налаштував ваш дрон або провів діагностику.
-
-### Порада для користувача:
-Надайте агенту доступ до цієї папки та скажіть:
-> *"Використовуй flycli, щоб перевірити статус моторів та надати мені звіт."*
-
-### Інструкція для AI-агента:
-1. Завжди починай зі `flycli scan --json`, щоб знайти порт.
-2. Використовуй `flycli execute <port> 115200 "<cmd>" --json` для отримання чистих даних.
-3. Парси масив `output` у JSON для аналізу.
+### Handshake: Why MSP?
+Betaflight is not always ready for CLI immediately. We first send an MSP packet (`API_VERSION`). This forces the firmware to initialize USB buffers and "wake up" for dialogue.
 
 ---
 
-## 🛠 Команди CLI
+## 🤖 Usage with an AI Agent
 
-| Команда | Опис |
+FlyCLI is ideal for an AI to configure your drone or perform diagnostics.
+
+### Tip for the User:
+Give the agent access to this folder and say:
+> *"Use flycli to check motor status and provide me with a report."*
+
+### Instruction for the AI Agent:
+1. Always start with `flycli scan --json` to find the port.
+2. Use `flycli execute <port> 115200 "<cmd>" --json` to get clean data.
+3. Parse the `output` array into JSON for analysis.
+
+---
+
+## 🛠️ CLI Commands
+
+| Command | Description |
 | --- | --- |
-| `scan` | Пошук доступних портів з маркуванням Betaflight |
-| `execute <port> <baud> <cmd>` | Виконання будь-якої CLI команди (diff, dump, set, save...) |
-| `health` | Комплексна перевірка: version, status, tasks |
-| `--json` | Флаг для отримання результату в структурованому форматі |
+| `scan` | Search for available ports with Betaflight marking |
+| `execute <port> <baud> <cmd>` | Execute any CLI command (diff, dump, set, save...) |
+| `health` | Comprehensive check: version, status, tasks |
+| `--json` | Flag to get the result in a structured format |
 
 ---
 
-- **74+ Тестових точок**: 
-    - **40 юніт-тестів** покривають всі значущі гілки поведінки (behavioral branches), включаючи таймаути та розриви з'єднання.
- *   🧪 **[Тестування та Надійність](docs/README.md#тестування-та-надійність)**  
-    *Про запуск 70+ тестів (40 Unit + 34 BDD) на реальному залізі.*
-- **ESLint**: Код відповідає стандартам Airbnb, префікси `_` замінено на справжні приватні поля `#`.
+- **74+ Test Points**:
+    - **40 Unit Tests** cover all significant behavior branches, including timeouts and connection breaks.
+ *   🧪 **[Testing and Reliability](docs/README.md#testing-and-reliability)**  
+    *About running 70+ tests (40 Unit + 34 BDD) on real hardware.*
+- **ESLint**: Code complies with Airbnb standards, `_` prefixes replaced with real private fields `#`.
 
 ```bash
-# 1. Запуск юніт-тестів та лінтера
+# 1. Run unit tests and linter
 npm test
 
-# 2. Запуск загальних BDD-сценаріїв (потребує заліза)
+# 2. Run general BDD scenarios (requires hardware)
 npm run test:bdd
 
-# 3. Глибока верифікація прошивки (потребує заліза)
+# 3. Deep firmware verification (requires hardware)
 npm run test:hw
 
-# 4. Повний цикл верифікації
+# 4. Full verification cycle
 npm run test:full
 ```
 
 ---
 
-## ⚠️ Важливо
-- Команда `save` призводить до **перезавантаження контролера**.
-- ⚠️ **УВАГА**: Команда `defaults` на платах **STM32F411 Black Pill** може вимкнути USB VCP. Будьте готові до перепрошивки через DFU.
-- Не підключайте пропелери під час роботи з USB.
+## ⚠️ Important
+- The `save` command leads to a **controller reboot**.
+- ⚠️ **WARNING**: The `defaults` command on **STM32F411 Black Pill** boards may disable USB VCP. Be prepared for re-flashing via DFU.
+- Do not connect propellers while working with USB.
 
 ---
-*Створено для тих, хто любить літати і кодувати.* 🚁💨
+*Created for those who love to fly and code.* 🚁💨

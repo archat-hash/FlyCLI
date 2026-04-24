@@ -96,7 +96,7 @@ Given('the flight controller entered CLI mode', async () => {
   }
 });
 
-// ... (решта кроків залишаються, але ми прибираємо порт з Given)
+// ... (other steps remain, but we remove port from Given)
 When('I execute the CLI command {string}', { timeout: 20000 }, async (cmd) => {
   response = await useCase.execute(cmd);
 });

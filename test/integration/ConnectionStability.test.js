@@ -24,14 +24,14 @@ describe('Integration Test: Connection Stability', () => {
     await controller.connect();
     console.log('--- Connection established ---');
 
-    // Перевірка чи отримуємо ми хоч якісь дані
+    // Check if we receive any data
     let dataReceived = false;
     controller.onData(() => { dataReceived = true; });
 
     await new Promise((r) => { setTimeout(r, 2000); });
     console.log('--- Data received during wait:', dataReceived);
 
-    // Далі виконуємо Use Case
+    // Now execute Use Case
     const result = await useCase.execute('version');
     console.log('--- Result:', result);
 

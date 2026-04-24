@@ -1,22 +1,22 @@
-# Журнал Аудиту Прошивки (STM32F411 Black Pill)
+# Firmware Audit Log (STM32F411 Black Pill)
 
-## Підсумок: Стан «Зелений» (Full Health)
+## Summary: Green State (Full Health)
 
-Після завершення серії тестів та виправлень ми можемо з упевненістю заявити: 
-**Прошивка Betaflight 4.3.2 на даному контролері працює абсолютно коректно.** 
+After completing a series of tests and fixes, we can confidently state:
+**Betaflight 4.3.2 firmware on this controller works absolutely correctly.**
 
-Всі початкові підозри на «баги заліза» чи «глюки прошивки» виявилися нюансами взаємодії, які ми успішно нівелювали у FlyCLI.
+All initial suspicions of "hardware bugs" or "firmware glitches" turned out to be interaction nuances that we successfully mitigated in FlyCLI.
 
-### Ключові висновки:
-1.  **Коректність даних**: Прошивка видає повні таблиці (наприклад, `tasks`), якщо дати їй достатньо часу на буферизацію (що ми тепер робимо у FlyCLI).
-2.  **Протокольні особливості**: Порожні результати `dma` чи `board_name` є стандартом для стану `UNCONFIGURED`. Залізо здорове.
-3.  **Стабільність з'єднання**: Контролер миттєво перезавантажується після `save`, що тепер коректно обробляється нашим інструментом.
+### Key Findings:
+1.  **Data Correctness**: The firmware outputs complete tables (e.g., `tasks`) if given enough time for buffering (which we now do in FlyCLI).
+2.  **Protocol Specifics**: Empty `dma` or `board_name` results are standard for the `UNCONFIGURED` state. The hardware is healthy.
+3.  **Connection Stability**: The controller reboots immediately after `save`, which is now correctly handled by our tool.
 
-**Вердикт**: FlyCLI повністю готовий до надійної діагностики та автоматизації на реальному залізі.
+**Verdict**: FlyCLI is fully ready for reliable diagnostics and automation on real hardware.
 
 ---
 
-## Історія перевірок:
-- 2026-04-11: Початковий аудит (виявлено Issue #001).
-- 2026-04-11: Виправлення Issue #001, #003, #005.
-- 2026-04-11: Фінальна верифікація: **Успішно**.
+## Audit History:
+- 2026-04-11: Initial audit (Issue #001 discovered).
+- 2026-04-11: Fixes for Issue #001, #003, #005.
+- 2026-04-11: Final verification: **Success**.
