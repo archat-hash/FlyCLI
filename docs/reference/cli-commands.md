@@ -1,67 +1,67 @@
-# 🛠 Betaflight CLI: Реверс-інжиніринг Функціоналу
+# 🛠 Betaflight CLI: Functionality Reverse-Engineering
 
-Цей документ містить повний перелік команд, зашитих у прошивку вашого польотного контролера, отриманий безпосередньо через **FlyCLI**. Кожна команда пояснена для розуміння можливостей системи.
+This document contains a complete list of commands built into your flight controller's firmware, obtained directly through **FlyCLI**. Each command is explained to understand the system's capabilities.
 
 ---
 
-## ⚙️ Налаштування та Конфігурація
+## ⚙️ Setup and Configuration
 
-| Команда | Опис українською |
+| Command | Description |
 | --- | --- |
-| `get` / `set` | Отримати або змінити значення будь-якої змінної конфігурації. Основний спосіб налаштування. |
-| `save` | Зберегти зміни в пам'ять та перезавантажити контролер. |
-| `defaults` | Скинути всі налаштування до заводських (Betaflight defaults). |
-| `diff` | Вивести лише ті налаштування, які відрізняються від стандартних. |
-| `dump` | Повний дамп усіх налаштувань контролера. |
-| `feature` | Увімкнення/вимкнення глобальних функцій (наприклад, GPS, OSD, AIRMODE). |
-| `profile` | Перемикання між профілями налаштувань (піди, фільтри). |
-| `rateprofile` | Перемикання між профілями рейдів (швидкість обертання дрона). |
-| `aux` | Налаштування режимів польоту на перемикачі пульта (ARM, ANGLE, HORIZON тощо). |
-| `vtx` / `vtxtable` | Керування відеопередавачем: частоти, потужність та сітка каналів. |
-| `simplified_tuning` | Застосування "спрощених" пресетів тюнінгу. |
+| `get` / `set` | Get or change the value of any configuration variable. The primary way to configure. |
+| `save` | Save changes to memory and reboot the controller. |
+| `defaults` | Reset all settings to factory (Betaflight defaults). |
+| `diff` | Display only those settings that differ from the standard ones. |
+| `dump` | Full dump of all controller settings. |
+| `feature` | Enable/disable global functions (e.g., GPS, OSD, AIRMODE). |
+| `profile` | Switch between setting profiles (PIDs, filters). |
+| `rateprofile` | Switch between rate profiles (drone rotation speed). |
+| `aux` | Configure flight modes on radio switches (ARM, ANGLE, HORIZON, etc.). |
+| `vtx` / `vtxtable` | Video transmitter control: frequencies, power, and channel grid. |
+| `simplified_tuning` | Apply "simplified" tuning presets. |
 
 ---
 
-## 🔍 Діагностика та Моніторинг
+## 🔍 Diagnostics and Monitoring
 
-| Команда | Опис українською |
+| Command | Description |
 | --- | --- |
-| `status` | Поточний стан системи: завантаження CPU, напруга, температура, помилки I2C, аптайм. |
-| `tasks` | Моніторинг системних процесів та частоти їх виконання (PID-петля, сенсори). |
-| `version` | Детальна інформація про версію прошивки та цільову плату. |
-| `sd_info` | Стан SD-карти (якщо є) для логів Blackbox. |
-| `flash_info` | Інформація про вбудовану флеш-пам'ять для логів. |
-| `dshot_telemetry_info` | Статус телеметрії від регуляторів обертів (ESC). |
-| `vtx_info` | Діагностика підключеного відеопередавача. |
+| `status` | Current system state: CPU load, voltage, temperature, I2C errors, uptime. |
+| `tasks` | Monitoring of system processes and their execution frequency (PID loop, sensors). |
+| `version` | Detailed information about the firmware version and target board. |
+| `sd_info` | SD card state (if present) for Blackbox logs. |
+| `flash_info` | Information about built-in flash memory for logs. |
+| `dshot_telemetry_info` | Telemetry status from electronic speed controllers (ESC). |
+| `vtx_info` | Diagnostics of the connected video transmitter. |
 
 ---
 
-## 🔌 Низькорівнева Робота з Залізом
+## 🔌 Low-Level Hardware Work
 
-| Команда | Опис українською |
+| Command | Description |
 | --- | --- |
-| `resource` | Мапування ресурсів: призначення функцій (UART, Motor, LED) на фізичні лапки (піни) процесора. |
-| `timer` / `dma` | Налаштування таймерів та прямого доступу до пам'яті (критично для роботи DShot та LED). |
-| `mcu_id` | Унікальний ідентифікатор вашого мікроконтролера. |
-| `motor` | Керування моторами окремо (тестування напрямку обертання). |
-| `mixer` / `mmix` | Налаштування мікшера моторів: як тяга розподіляється між ними залежно від рами. |
-| `smix` | Налаштування мікшера сервоприводів (для літаків або трікоптерів). |
+| `resource` | Resource mapping: assigning functions (UART, Motor, LED) to physical pins of the processor. |
+| `timer` / `dma` | Timer and Direct Memory Access configuration (critical for DShot and LED operation). |
+| `mcu_id` | Unique identifier of your microcontroller. |
+| `motor` | Control motors individually (rotation direction testing). |
+| `mixer` / `mmix` | Motor mixer configuration: how thrust is distributed among them depending on the frame. |
+| `smix` | Servo mixer configuration (for planes or tricopters). |
 
 ---
 
-## 🚀 Спеціальні Режими та Сервіси
+## 🚀 Special Modes and Services
 
-| Команда | Опис українською |
+| Command | Description |
 | --- | --- |
-| `bl` | Негайне перемикання в режим **Bootloader** (для прошивки через DFU). |
-| `msc` | Переведення контролера в режим USB-накопичувача (для читання SD-карти). |
-| `gpspassthrough` | Прокидання даних з GPS модуля напряму на ваш комп'ютер через USB. |
-| `serialpassthrough` | Прокидання даних з будь-якого UART порту на USB (корисно для налаштування периферії). |
-| `escprog` | Прокидання зв'язку для прошивки регуляторів (BLHeliPassthrough). |
-| `bind_rx` | Запуск режиму зв'язки (Binding) для інтегрованих приймачів (SPI або SRXL2). |
-| `play_sound` | Відтворення звукових сигналів через біпер. |
+| `bl` | Immediate switch to **Bootloader** mode (for flashing via DFU). |
+| `msc` | Switch the controller to USB mass storage mode (for reading the SD card). |
+| `gpspassthrough` | Passing data from the GPS module directly to your computer via USB. |
+| `serialpassthrough` | Passing data from any UART port to USB (useful for peripheral configuration). |
+| `escprog` | Passing communication for flashing regulators (BLHeliPassthrough). |
+| `bind_rx` | Start binding mode for integrated receivers (SPI or SRXL2). |
+| `play_sound` | Play sound signals via the beeper. |
 
 ---
 
-### Примітка для AI-агента:
-Цей список команд є базою для автоматизованої діагностики. Якщо ви хочете перевірити справність заліза, почніть з `status` та `resource show`. Для зміни поведінки — використовуйте `get/set` та обов'язково `save`.
+### Note for AI Agent:
+This command list is the basis for automated diagnostics. If you want to check hardware health, start with `status` and `resource show`. To change behavior, use `get/set` and necessarily `save`.

@@ -1,11 +1,11 @@
 # FlyCLI Solution Architecture
 
-Цей документ описує архітектурне рішення FlyCLI з використанням практик **C4 Model** та **4+1 Architectural View Model**. Проєкт розроблений як High-Stability інструмент для автоматизованої діагностики та конфігурації польотних контролерів Betaflight.
+This document describes the architectural solution of FlyCLI using **C4 Model** and **4+1 Architectural View Model** practices. The project is designed as a High-Stability tool for automated diagnostics and configuration of Betaflight flight controllers.
 
 ---
 
 ## 1. System Context (C4 Level 1)
-FlyCLI виступає посередником між AI/Pilot та апаратною частиною (Flight Controller). 
+FlyCLI acts as a mediator between the AI/Pilot and the hardware (Flight Controller).
 
 ```mermaid
 graph TD
@@ -17,7 +17,7 @@ graph TD
 ---
 
 ## 2. Logical View (Clean Architecture)
-Ми використовуємо гексагональну архітектуру (Ports and Adapters) для забезпечення незалежності бізнес-логіки.
+We use hexagonal architecture (Ports and Adapters) to ensure business logic independence.
 
 ```mermaid
 graph TD
@@ -45,16 +45,16 @@ graph TD
     UC -- "Uses" --> CP
 ```
 
-### Рівні (Layers):
-- **Domain Layer**: Сутності та інтерфейси (`IFlightController`, `CliParser`).
-- **Application Layer**: Use Cases, що реалізують конкретні бізнес-сценарії (`ExecuteCliUseCase`).
-- **Infrastructure Layer**: Реалізація Serial-зв'язку та Port Scanning.
-- **Delivery Layer (Composition Root)**: CLI інтерфейс у `src/interfaces/cli/`. Це єдине місце, де інфраструктура з'єднується з додатком (Dependency Injection).
+### Layers:
+- **Domain Layer**: Entities and interfaces (`IFlightController`, `CliParser`).
+- **Application Layer**: Use Cases that implement specific business scenarios (`ExecuteCliUseCase`).
+- **Infrastructure Layer**: Implementation of Serial communication and Port Scanning.
+- **Delivery Layer (Composition Root)**: CLI interface in `src/interfaces/cli/`. This is the only place where infrastructure connects with the application (Dependency Injection).
 
 ---
 
 ## 3. State Machine (Command Lifecycle)
-Процес виконання команди CLI проходить через кілька станів для гарантування стабільності та уникнення "висання" порту.
+The CLI command execution process passes through several states to guarantee stability and avoid port "hanging".
 
 ```mermaid
 stateDiagram-v2
@@ -73,7 +73,7 @@ stateDiagram-v2
 ---
 
 ## 4. Process View (Hardware Interaction)
-FlyCLI реалізує стійку обробку асинхронних подій та фрагментованих даних.
+FlyCLI implements resilient processing of asynchronous events and fragmented data.
 
 ```mermaid
 sequenceDiagram
@@ -102,20 +102,20 @@ sequenceDiagram
 ---
 
 ## 5. Development View (Standards & Tools)
-Проєкт дотримується принципів високої якості коду для забезпечення AI-Ready статусу.
+The project adheres to high code quality principles to ensure AI-Ready status.
 
 - **Linting**: Airbnb JavaScript Style Guide (Strict).
 - **Module System**: ESM (ECMAScript Modules).
 - **Testing Strategy**:
-    - **Unit (Jest)**: Покриває всі значущі гілки поведінки, включаючи таймаути та розриви з'єднання.
-    - **Integration (Jest)**: Контроль архітектурних шарів через **dependency-cruiser**.
-    - **BDD (Cucumber)**: **34 сценарії** повної функціональної верифікації на реальному залізі (STM32F411).
-- **Resilience**: захист таймаутами та механізмами очищення буферів (flush).
+    - **Unit (Jest)**: Covers all significant behavior branches, including timeouts and connection breaks.
+    - **Integration (Jest)**: Control of architectural layers through **dependency-cruiser**.
+    - **BDD (Cucumber)**: **34 scenarios** of full functional verification on real hardware (STM32F411).
+- **Resilience**: Protected by timeouts and buffer flush mechanisms.
 
 ---
 
 ## 6. Physical View (Deployment)
-FlyCLI розгортається як Node.js інструмент, що з'єднаний через USB.
+FlyCLI is deployed as a Node.js tool connected via USB.
 
 ```mermaid
 graph LR
@@ -140,18 +140,18 @@ graph LR
 
 ## 7. Implementation Reality (Bottom-Up Challenges)
 
-### 7.1. Фрагментація даних (Serial Chunks)
-Реальність роботи з USB-VCP вимагає обробки чанків по 64/128 байт. `SerialFlightController` накопичує дані в `#buffer` до появи паттерну промпта.
+### 7.1. Data Fragmentation (Serial Chunks)
+The reality of working with USB-VCP requires processing chunks of 64/128 bytes. `SerialFlightController` accumulates data in `#buffer` until the prompt pattern appears.
 
-### 7.2. Дебаунс (Fake Prompts)
-В `ExecuteCliUseCase` додано затримку **300мс** після детекції промпта для збору "хвоста" даних, які могли затриматися в буфері.
+### 7.2. Debounce (Fake Prompts)
+A delay of **300ms** is added in `ExecuteCliUseCase` after prompt detection to collect the "tail" of data that might have been delayed in the buffer.
 
 ### 7.3. Hardware Handshake
-MSP Handshake при старті змушує прошивку ініціалізувати USB-стек, що критично для надійного входу в CLI режим на деяких платах (наприклад, STM32F411 Black Pill).
+MSP Handshake at start forces the firmware to initialize the USB stack, which is critical for reliable entry into CLI mode on some boards (e.g., STM32F411 Black Pill).
 
 ---
 
 ## Key Design Decisions (ADR Summary)
-- **Prompt Detection**: Динамічна детекція через RegEx.
-- **Echo Suppression**: Видалення відлуння команди.
-- **Strict ESM**: Чистий JS без етапу транспайляції.
+- **Prompt Detection**: Dynamic detection via RegEx.
+- **Echo Suppression**: Command echo removal.
+- **Strict ESM**: Pure JS without a transpilation stage.

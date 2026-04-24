@@ -47,7 +47,7 @@ describe('Reboot Recovery Integration', () => {
     }
 
     if (!reconnected) {
-      console.warn(`\n[WARNING] Дрон на ${port} не повернувся протягом 20 секунд після команди save. Наступні BDD тести можуть бути пропущені.`);
+      console.warn(`\n[WARNING] Drone on ${port} did not return within 20 seconds after the save command. Subsequent BDD tests might be skipped.`);
     }
   }, 30000);
 });
