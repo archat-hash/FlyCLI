@@ -1,11 +1,38 @@
 {
   "name": "flycli",
   "version": "1.0.0",
+  "description": "A reliable CLI tool for Betaflight flight controller interaction and automation.",
+  "license": "MIT",
+  "keywords": [
+    "betaflight",
+    "cli",
+    "drone",
+    "fpv",
+    "flight-controller",
+    "serialport",
+    "automation"
+  ],
+  "author": "Oleh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/archat-hash/FlyCLI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/archat-hash/FlyCLI/issues"
+  },
+  "homepage": "https://github.com/archat-hash/FlyCLI#readme",
   "type": "module",
   "main": "index.js",
   "bin": {
     "flycli": "./index.js"
   },
+  "files": [
+    "src/",
+    "index.js",
+    "README.md",
+    "docs/",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "test:bdd": "node --experimental-vm-modules node_modules/.bin/cucumber-js",
