@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import scanCommand from './src/interfaces/cli/scan.js';
 import executeCommand from './src/interfaces/cli/execute.js';
 import healthCommand from './src/interfaces/cli/health.js';
+import contextCommand from './src/interfaces/cli/context.js';
 
 const program = new Command();
 
@@ -34,5 +35,12 @@ program
   .argument('[baud]', 'Baud rate', '115200')
   .option('--json', 'Output as JSON')
   .action(healthCommand);
+
+program
+  .command('context')
+  .description('Get machine-readable or human-readable context about FlyCLI')
+  .argument('[topic]', 'Specific context topic to retrieve (e.g., commands, safety)')
+  .option('--json', 'Output as JSON for AI Agents')
+  .action(contextCommand);
 
 program.parse();
