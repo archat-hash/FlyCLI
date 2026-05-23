@@ -1,6 +1,6 @@
 # 🚀 FlyCLI: Quick Start and User Guide
 
-**FlyCLI** is a powerful Node.js-based command-line tool created for reliable interaction with Betaflight flight controllers.
+**FlyCLI** is a powerful Node.js-based command-line tool designed for reliable interaction with flight controllers using the **MSP (MultiWii Serial Protocol)**. While primarily used with **Betaflight**, it is compatible with other MSP-based firmwares such as **iNav** or **Cleanflight**.
 
 ---
 

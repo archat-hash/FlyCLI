@@ -1,6 +1,6 @@
 # 🚁 FlyCLI: Your Drone Under Full Control (and AI)
 
-**FlyCLI** is a reliable command-line tool for automated interaction with Betaflight flight controllers. Designed for developers, AI agents, and pilots who value stability and automation.
+**FlyCLI** is a reliable command-line tool for automated interaction with flight controllers using the **MSP (MultiWii Serial Protocol)**. While primarily designed for **Betaflight**, it also supports other MSP-compatible firmwares like **iNav** or **Cleanflight**, providing a stable interface for developers, AI agents, and pilots.
 
 ---
 
