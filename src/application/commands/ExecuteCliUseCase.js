@@ -95,11 +95,57 @@ export default class ExecuteCliUseCase {
   }
 
   /**
+   * Executes a CLI command or a batch of commands and returns the response.
+   * @param {string|string[]} command - The CLI command(s) to execute.
+   * @returns {Promise<string|string[]>} The output of the command(s).
+   * @throws {TimeoutError} If the device fails to respond within the timeout.
+   * @throws {DeviceError} If the device disconnects unexpectedly.
+   * @throws {ConnectionError} If the connection is lost.
+   */
+  async execute(command) {
+    let globalTimeout = null;
+
+    const timeoutPromise = new Promise((_, reject) => {
+      globalTimeout = setTimeout(() => {
+        reject(new TimeoutError(`Timeout waiting for CLI response: ${Array.isArray(command) ? 'Batch' : command}`));
+      }, GLOBAL_TIMEOUT_MS);
+      globalTimeout.unref();
+    });
+
+    try {
+      this.#logger.debug(`Executing CLI command: ${command}`);
+      const executeFn = async () => {
+        if (Array.isArray(command)) {
+          const results = [];
+          await this.#controller.connect();
+          try {
+            for (const cmd of command) {
+              const res = await this.#executeSingle(cmd, false);
+              results.push(res);
+              if (ExecuteCliUseCase.#isDisconnectingCommand(cmd)) break;
+            }
+            return results;
+          } finally {
+            await this.#controller.disconnect();
+          }
+        }
+        return await this.#executeInner(command);
+      };
+      return await Promise.race([executeFn(), timeoutPromise]);
+    } finally {
+      if (globalTimeout) clearTimeout(globalTimeout);
+    }
+  }
+
+  /**
    * @param {string} command
+   * @param {boolean} shouldConnect
    * @returns {Promise<string>}
    */
-  async #executeInner(command) {
-    await this.#controller.connect();
+  async #executeSingle(command, shouldConnect = true) {
+    if (shouldConnect) {
+      await this.#controller.connect();
+    }
 
     const waitTime = command.toLowerCase().startsWith('profile') ? PROFILE_DELAY_MS : LINE_DELAY_MS;
     await delay(waitTime);
@@ -117,28 +163,13 @@ export default class ExecuteCliUseCase {
   }
 
   /**
-   * Executes a CLI command and returns the response.
-   * @param {string} command - The CLI command to execute.
-   * @returns {Promise<string>} The output of the command.
-   * @throws {TimeoutError} If the device fails to respond within the timeout.
-   * @throws {DeviceError} If the device disconnects unexpectedly.
-   * @throws {ConnectionError} If the connection is lost.
+   * @param {string} command
+   * @returns {Promise<string>}
    */
-  async execute(command) {
-    let globalTimeout = null;
-
-    const timeoutPromise = new Promise((_, reject) => {
-      globalTimeout = setTimeout(() => {
-        reject(new TimeoutError(`Timeout waiting for CLI response: ${command}`));
-      }, GLOBAL_TIMEOUT_MS);
-      globalTimeout.unref();
-    });
-
+  async #executeInner(command) {
     try {
-      this.#logger.debug(`Executing CLI command: ${command}`);
-      return await Promise.race([this.#executeInner(command), timeoutPromise]);
+      return await this.#executeSingle(command, true);
     } finally {
-      if (globalTimeout) clearTimeout(globalTimeout);
       await this.#controller.disconnect();
     }
   }

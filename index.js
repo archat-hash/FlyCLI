@@ -24,8 +24,9 @@ program
   .description('Execute a CLI command on the flight controller')
   .argument('<port>', 'Serial port path (e.g. /dev/tty.usbmodem1)')
   .argument('<baud>', 'Baud rate (e.g. 115200)')
-  .argument('<cmd>', 'CLI command to execute (e.g. "diff all")')
+  .argument('[cmd]', 'CLI command to execute (e.g. "diff all")')
   .option('--json', 'Output as JSON')
+  .option('-f, --file <path>', 'Path to a file containing CLI commands')
   .action(executeCommand);
 
 program
