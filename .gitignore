@@ -2,3 +2,5 @@ node_modules/
 Plan.md
 coverage/
 tmp/
+dist/
+bundle/
