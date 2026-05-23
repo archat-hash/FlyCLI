@@ -119,17 +119,20 @@ export default class ExecuteCliUseCase {
           const results = [];
           await this.#controller.connect();
           try {
-            for (const cmd of command) {
+            /* eslint-disable no-await-in-loop */
+            for (let i = 0; i < command.length; i += 1) {
+              const cmd = command[i];
               const res = await this.#executeSingle(cmd, false);
               results.push(res);
               if (ExecuteCliUseCase.#isDisconnectingCommand(cmd)) break;
             }
+            /* eslint-enable no-await-in-loop */
             return results;
           } finally {
             await this.#controller.disconnect();
           }
         }
-        return await this.#executeInner(command);
+        return this.#executeInner(command);
       };
       return await Promise.race([executeFn(), timeoutPromise]);
     } finally {
