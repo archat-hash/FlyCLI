@@ -151,7 +151,28 @@ MSP Handshake at start forces the firmware to initialize the USB stack, which is
 
 ---
 
+## 8. AI Tuning Layer (Experimental)
+FlyCLI provides structured data that enables AI Agents (like Gemini CLI) to act as Tuning Experts.
+
+```mermaid
+graph TD
+    User([Pilot]) -- "Asks for advice" --> AI[AI Agent / Gemini CLI]
+    AI -- "flycli execute --json" --> SFC[SerialFlightController]
+    SFC -- "Raw Config" --> AI
+    AI -- "Refers to" --> KB[docs/knowledge/tuning-base.md]
+    KB -- "Best Practices" --> AI
+    AI -- "Proposes Fix" --> User
+```
+
+### Components:
+- **Expert Agents**: Specialized prompts in `.agents/TUNER.md`.
+- **Knowledge Base**: Curated tuning data in `docs/knowledge/`.
+- **Structured Feedback**: JSON output from CLI ensures the AI doesn't hallucinate parameter names.
+
+---
+
 ## Key Design Decisions (ADR Summary)
 - **Prompt Detection**: Dynamic detection via RegEx.
 - **Echo Suppression**: Command echo removal.
 - **Strict ESM**: Pure JS without a transpilation stage.
+- **AI-First Design**: JSON output and structured knowledge base for automated diagnostics.
