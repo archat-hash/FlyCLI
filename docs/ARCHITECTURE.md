@@ -5,7 +5,7 @@ This document describes the architectural solution of FlyCLI using **C4 Model** 
 ---
 
 ## 1. System Context (C4 Level 1)
-FlyCLI acts as a mediator between the AI/Pilot and the hardware (Flight Controller).
+FlyCLI acts as a mediator between the AI/Pilot and the hardware (Flight Controller). It leverages the **MSP (MultiWii Serial Protocol)** to ensure reliable interaction across various firmwares (Betaflight, iNav, etc.).
 
 ```mermaid
 graph TD
