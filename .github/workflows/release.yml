@@ -1,0 +1,49 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags starting with v (e.g., v1.0.0)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Build
+        run: npm run build:bin
+
+      - name: Prepare Assets for Release
+        run: |
+          cd dist
+          zip -r flycli-win-x64.zip flycli-win.exe prebuilds/win32-x64
+          zip -r flycli-linux-x64.zip flycli-linux prebuilds/linux-x64
+          zip -r flycli-macos-x64.zip flycli-macos prebuilds/darwin-x64+arm64
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/flycli-win-x64.zip
+            dist/flycli-linux-x64.zip
+            dist/flycli-macos-x64.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
