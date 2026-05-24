@@ -44,6 +44,25 @@ If an Agent identifies a blocker or missing data, escalate back to the source ro
 
 ---
 
+## 📦 VERSIONING POLICY (SEMANTIC VERSIONING — MANDATORY)
+
+Version format: **`MAJOR.MINOR.PATCH`** (e.g. `1.2.3`)
+
+| Change type | What qualifies | Version bump | Example |
+|---|---|---|---|
+| 🔧 **Fix / Patch** | Bug fix, typo, CI config, refactor with no new behaviour | `+0.0.1` | `1.0.0` → `1.0.1` |
+| ✨ **Feature** | New command, new option, new output format, new behaviour | `+0.1.0` | `1.0.1` → `1.1.0` |
+| 🎨 **Redesign** | Breaking change, architecture overhaul, new public API contract | `+1.0.0` | `1.1.0` → `2.0.0` |
+
+### Rules
+1. **ALWAYS** update `version` in `package.json` before releasing.
+2. **NEVER** reuse or skip a version number.
+3. After a **MINOR** bump → reset PATCH to `0`. After a **MAJOR** bump → reset MINOR and PATCH to `0`.
+4. Create a Git tag matching the version: `git tag v1.2.3 && git push origin v1.2.3`.
+5. The Git tag triggers the GitHub Actions release workflow automatically.
+
+---
+
 ## 🛑 CRITICAL RULES (NON-NEGOTIABLE)
 1. **NO LOGIC SIMULATION**: Never use scratch scripts or manual data manipulation to bypass service logic. If a service is missing a feature, implement it in the service code.
 2. **CODE OVER SCRIPTS**: Business logic MUST reside in the `src/` directory. Scratch scripts are ONLY for one-off DB maintenance or low-level debugging.
