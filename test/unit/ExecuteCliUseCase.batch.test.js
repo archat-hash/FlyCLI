@@ -20,7 +20,10 @@ const { SerialPort } = await import('serialport');
 const setup = () => {
   jest.clearAllMocks();
   const mockLogger = {
-    info: jest.fn(), log: jest.fn(), error: jest.fn(), debug: jest.fn(),
+    info: jest.fn(),
+    log: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
   };
   const mockPort = {
     on: jest.fn(),
@@ -50,7 +53,9 @@ describe('ExecuteCliUseCase — Batch Execution', () => {
   it('should execute multiple commands in a single session', async () => {
     const { useCase, mockPort } = setup();
     let dataCallback;
-    mockPort.on.mockImplementation((event, cb) => { if (event === 'data') dataCallback = cb; });
+    mockPort.on.mockImplementation((event, cb) => {
+      if (event === 'data') dataCallback = cb;
+    });
 
     const commands = ['version', 'status'];
     const executePromise = useCase.execute(commands);
@@ -76,7 +81,9 @@ describe('ExecuteCliUseCase — Batch Execution', () => {
   it('should stop batch execution on reboot command', async () => {
     const { useCase, mockPort } = setup();
     let dataCallback;
-    mockPort.on.mockImplementation((event, cb) => { if (event === 'data') dataCallback = cb; });
+    mockPort.on.mockImplementation((event, cb) => {
+      if (event === 'data') dataCallback = cb;
+    });
 
     // Mock waitForDisconnect to resolve immediately
     jest.spyOn(SerialFlightController.prototype, 'waitForDisconnect').mockResolvedValue(true);
