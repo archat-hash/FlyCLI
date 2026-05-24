@@ -40,7 +40,6 @@
     "test:full": "npm run test && npm run test:bdd && npm run test:hw",
     "pretest": "npm run lint",
     "lint": "eslint .",
-    "prepare": "npm run lint",
     "build:bin": "esbuild index.js --bundle --platform=node --format=cjs --outfile=bundle/flycli.cjs --external:serialport --external:commander && node scripts/build-bin.js"
   },
   "pkg": {
@@ -49,9 +48,9 @@
       "docs/**/*"
     ],
     "targets": [
-      "node18-win-x64",
-      "node18-linux-x64",
-      "node18-macos-x64"
+      "node20-win-x64",
+      "node20-linux-x64",
+      "node20-macos-x64"
     ]
   },
   "engines": {
@@ -61,7 +60,7 @@
     "commander": "^14.0.3",
     "esbuild": "^0.28.0",
     "fs-extra": "^11.3.5",
-    "pkg": "^5.8.1",
+    "@yao-pkg/pkg": "^5.12.0",
     "serialport": "^13.0.0"
   },
   "devDependencies": {

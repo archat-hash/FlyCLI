@@ -1,4 +1,4 @@
-import pkg from 'pkg';
+import pkg from '@yao-pkg/pkg';
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -54,12 +54,17 @@ async function build() {
   fs.ensureDirSync(distDir);
 
   const targets = [
-    { target: 'node18-win-x64', output: 'flycli-win.exe', platform: 'win32-x64' },
-    { target: 'node18-linux-x64', output: 'flycli-linux', platform: 'linux-x64' },
-    { target: 'node18-macos-x64', output: 'flycli-macos', platform: 'darwin-x64+arm64' },
+    { target: 'node20-win-x64', output: 'flycli-win.exe', platform: 'win32-x64' },
+    { target: 'node20-linux-x64', output: 'flycli-linux', platform: 'linux-x64' },
+    { target: 'node20-macos-x64', output: 'flycli-macos', platform: 'darwin-x64+arm64' },
   ];
 
-  await Promise.all(targets.map((t) => buildTarget(t)));
+  // Sequential build for better stability in CI
+  for (let i = 0; i < targets.length; i += 1) {
+    /* eslint-disable no-await-in-loop */
+    await buildTarget(targets[i]);
+    /* eslint-enable no-await-in-loop */
+  }
 
   process.stdout.write('\n✅ Build complete! Binaries are in the "dist" folder.\n');
 }
