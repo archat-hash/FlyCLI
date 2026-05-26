@@ -31,6 +31,7 @@
     "index.js",
     "README.md",
     "docs/",
+    "skills/",
     "LICENSE"
   ],
   "scripts": {
@@ -45,7 +46,8 @@
   "pkg": {
     "assets": [
       "src/**/*",
-      "docs/**/*"
+      "docs/**/*",
+      "skills/**/*"
     ],
     "targets": [
       "node20-win-x64",
