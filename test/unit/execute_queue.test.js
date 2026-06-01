@@ -39,7 +39,7 @@ describe('executeCommand — Queue-based State Machine', () => {
   });
 
   it('should correctly process command through states: ENTER -> DATA -> DONE', async () => {
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+    const logSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => { });
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
     const cmdPromise = executeCommand(
@@ -69,7 +69,7 @@ describe('executeCommand — Queue-based State Machine', () => {
   }, 15000);
 
   it('should handle large fragmented data arriving after echo', async () => {
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+    const logSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => { });
     const cmdPromise = executeCommand(
       '/dev/tty.usbmodem1',
       '115200',

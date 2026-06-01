@@ -47,7 +47,7 @@ describe('executeCommand — Timeout Reproduction', () => {
       { json: true },
     );
 
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+    const logSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => { });
 
     await new Promise((r) => { setTimeout(r, 50); });
     dataCallback(Buffer.from('CLI\r\n# '));
