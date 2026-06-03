@@ -6,13 +6,14 @@ import executeCommand from './src/interfaces/cli/execute.js';
 import healthCommand from './src/interfaces/cli/health.js';
 import contextCommand from './src/interfaces/cli/context.js';
 import wizardCommand from './src/interfaces/cli/wizard.js';
+import cadCommand from './src/interfaces/cli/cad.js';
 
 const program = new Command();
 
 program
   .name('flycli')
   .description('CLI tool for Betaflight flight controller interaction')
-  .version('1.0.0');
+  .version('1.2.0');
 
 program
   .command('scan')
@@ -53,5 +54,11 @@ program
   .argument('[baud]', 'Baud rate', '115200')
   .option('--json', 'Output final result as JSON for AI Agents')
   .action(wizardCommand);
+
+program
+  .command('cad')
+  .description('Start an interactive AI-powered CAD session with FreeCAD')
+  .argument('<prompt>', 'Natural-language description of the 3D model (e.g. "Make a drone frame")')
+  .action(cadCommand);
 
 program.parse();
