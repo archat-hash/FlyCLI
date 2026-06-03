@@ -47,8 +47,8 @@ describe('ExecuteCliUseCase — Success Paths', () => {
     mockPort.on.mockImplementation((event, cb) => { if (event === 'data') dataCallback = cb; });
 
     const executePromise = useCase.execute('version');
-    setTimeout(() => { if (dataCallback) dataCallback(Buffer.from('##CLI\r\n# ')); }, 10);
-    setTimeout(() => { if (dataCallback) dataCallback(Buffer.from('v\r\n# Betaflight / STM32F411\r\n# ')); }, 20);
+    setTimeout(() => { if (dataCallback) dataCallback(Buffer.from('##CLI\r\n# ')); }, 100);
+    setTimeout(() => { if (dataCallback) dataCallback(Buffer.from('version\r\n# Betaflight / STM32F411\r\n# ')); }, 200);
 
     const result = await executePromise;
     expect(result).toContain('Betaflight / STM32F411');

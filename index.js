@@ -5,6 +5,7 @@ import scanCommand from './src/interfaces/cli/scan.js';
 import executeCommand from './src/interfaces/cli/execute.js';
 import healthCommand from './src/interfaces/cli/health.js';
 import contextCommand from './src/interfaces/cli/context.js';
+import wizardCommand from './src/interfaces/cli/wizard.js';
 
 const program = new Command();
 
@@ -43,5 +44,14 @@ program
   .argument('[topic]', 'Specific context topic to retrieve (e.g., commands, safety)')
   .option('--json', 'Output as JSON for AI Agents')
   .action(contextCommand);
+
+program
+  .command('wizard')
+  .description('Run an interactive setup wizard (Human-in-the-Loop)')
+  .argument('<type>', 'Wizard type: rx (RC calibration)')
+  .argument('<port>', 'Serial port path (e.g. /dev/tty.usbmodem1 or COM3)')
+  .argument('[baud]', 'Baud rate', '115200')
+  .option('--json', 'Output final result as JSON for AI Agents')
+  .action(wizardCommand);
 
 program.parse();

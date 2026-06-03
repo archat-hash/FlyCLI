@@ -10,6 +10,7 @@ export default class MSP {
     BUILD_INFO: 5,
     FEATURE: 36,
     BOARD_ALIGNMENT_CONFIG: 38,
+    RC: 105,
     CLI: 216,
   };
 

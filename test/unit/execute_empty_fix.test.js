@@ -45,7 +45,7 @@ describe('executeCommand — Data Fragmentation Fix', () => {
       { json: true },
     );
 
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+    const logSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => { });
 
     /* Initial prompt */
     await new Promise((r) => { setTimeout(r, 50); });
