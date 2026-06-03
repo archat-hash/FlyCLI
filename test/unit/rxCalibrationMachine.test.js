@@ -100,6 +100,6 @@ describe('RxCalibrationMachine', () => {
 
     const result = await machine.run();
     expect(result.status).toBe('error');
-    expect(result.error).toBe('Failed to connect to the flight controller.');
+    expect(result.error).toBe('Connection failed');
   });
 });
