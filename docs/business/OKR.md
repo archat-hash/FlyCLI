@@ -10,3 +10,11 @@ Ensure that every automated process involving hardware configuration can be safe
 
 ## Pivot Logic & Reasoning
 If the JSON parsing fails for AI Agents due to visual artifacts, we must immediately pivot to a pure background headless mode for agents, separating human UI completely into a standalone tool.
+
+## Objective 2: Empower Amateurs with AI-Assisted CAD Design
+Transform FlyCLI from a mere configuration tool into a hardware development assistant by integrating an AI-driven, interactive 3D modeling workflow.
+
+**Key Results:**
+- **KR2.1:** Implement the `flycli cad` command that seamlessly orchestrates the FreeCAD GUI from Node.js by `v1.3.0`.
+- **KR2.2:** Establish a reliable IPC/CadQuery bridge allowing the AI (Gemini) to generate and instantly visualize solid models without user scripting.
+- **KR2.3:** Ensure a zero-friction distribution strategy where users don't need to manually configure FreeCAD paths or Python environments.

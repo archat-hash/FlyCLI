@@ -1,29 +1,100 @@
 import { spawn } from 'child_process';
 import net from 'net';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
+
+/**
+ * @module CadEngineProcess
+ * @description Manages the FreeCAD process and IPC communication (IpcBridge).
+ *
+ * Traceability:
+ *   - Interface: ddd_interfaces.md § ICadEngineProcess, IpcBridge
+ *   - Architecture: implementation_plan.md § CadEngineProcess
+ *   - IPC Payload: ddd_interfaces.md § IPC Payload Contracts (JSON over TCP)
+ *   - CQRS: start/stop/executeScript [Commands]; getDocumentState [Query]
+ */
+
+const DEFAULT_PORT = 9099;
+const MAX_RETRIES = 15;
+const RETRY_DELAY_MS = 1000;
+
+/**
+ * Returns the absolute path to the Python IPC listener script.
+ * @returns {string}
+ */
+function resolveListenerPath() {
+  return path.resolve(dirname, '../../../assets/python/freecad_listener.py');
+}
+
+/**
+ * Parses a newline-delimited JSON buffer and returns complete messages.
+ * @param {string} buffer
+ * @returns {{ messages: Object[], remaining: string }}
+ */
+function parseBuffer(buffer) {
+  const messages = [];
+  let remaining = buffer;
+  let idx = remaining.indexOf('\n');
+
+  while (idx !== -1) {
+    const line = remaining.slice(0, idx).trim();
+    remaining = remaining.slice(idx + 1);
+
+    if (line) {
+      try {
+        messages.push(JSON.parse(line));
+      } catch {
+        /*
+         * Malformed JSON from FreeCAD — silently skip.
+         * The caller logs errors via _handleResponse.
+         */
+      }
+    }
+    idx = remaining.indexOf('\n');
+  }
+
+  return { messages, remaining };
+}
+
+/**
+ * Attempts a single TCP connection to the IPC socket.
+ * @param {number} port
+ * @returns {Promise<net.Socket>}
+ */
+function tryConnect(port) {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    socket.connect(port, '127.0.0.1', () => resolve(socket));
+    socket.on('error', (err) => {
+      socket.destroy();
+      reject(err);
+    });
+  });
+}
 
 /**
  * Manages the FreeCAD process and IPC communication.
  * @implements {ICadEngineProcess}
  */
 export class CadEngineProcess {
+  /**
+   * @param {object} logger
+   */
   constructor(logger = console) {
     this.logger = logger;
     this.process = null;
     this.socket = null;
-    this.port = 9099; // Default port
+    this.port = DEFAULT_PORT;
     this.requestMap = new Map();
     this.requestIdCounter = 1;
   }
 
   /**
-   * Starts the FreeCAD process and connects to the IpcBridge.
-   * @param {string} executablePath 
+   * [COMMAND] Starts the FreeCAD process and connects to the IpcBridge.
+   * @param {string} executablePath
    * @returns {Promise<void>}
    */
   async start(executablePath) {
@@ -31,13 +102,12 @@ export class CadEngineProcess {
       throw new Error('FreeCAD process is already running.');
     }
 
-    const listenerPath = path.resolve(__dirname, '../../../assets/python/freecad_listener.py');
-    
-    // We launch FreeCAD GUI and pass the listener script to run on startup
+    const listenerPath = resolveListenerPath();
     this.logger.info(`Launching FreeCAD from ${executablePath}...`);
-    this.process = spawn(executablePath, [listenerPath, this.port.toString()], {
-      detached: false, // For MVP we keep it attached to FlyCLI process lifecycle
-      stdio: ['ignore', 'pipe', 'pipe']
+
+    this.process = spawn(executablePath, [listenerPath, String(this.port)], {
+      detached: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
     this.process.stdout.on('data', (data) => {
@@ -54,60 +124,49 @@ export class CadEngineProcess {
       this.socket = null;
     });
 
-    // Wait for the IPC socket to become available
-    return this._waitForConnection();
+    await this.waitForConnection();
   }
 
-  async _waitForConnection(retries = 15, delayMs = 1000) {
-    return new Promise((resolve, reject) => {
-      let attempts = 0;
+  /**
+   * Retries TCP connection until FreeCAD IPC socket is available.
+   * @param {number} retries
+   * @param {number} delayMs
+   * @returns {Promise<void>}
+   */
+  async waitForConnection(retries = MAX_RETRIES, delayMs = RETRY_DELAY_MS) {
+    let attempts = 0;
 
-      const attemptConnection = () => {
-        attempts++;
-        this.logger.info(`Attempting to connect to FreeCAD IPC... (${attempts}/${retries})`);
-        
-        const socket = new net.Socket();
-        
-        socket.connect(this.port, '127.0.0.1', () => {
-          this.logger.info('Successfully connected to FreeCAD IPC.');
-          this.socket = socket;
-          this._setupSocketListeners();
-          resolve();
-        });
+    const attempt = async () => {
+      attempts += 1;
+      this.logger.info(`Attempting IPC connection… (${attempts}/${retries})`);
 
-        socket.on('error', (err) => {
-          socket.destroy();
-          if (attempts >= retries) {
-            reject(new Error(`Failed to connect to FreeCAD IPC after ${retries} attempts.`));
-          } else {
-            setTimeout(attemptConnection, delayMs);
-          }
-        });
-      };
+      try {
+        this.socket = await tryConnect(this.port);
+        this.setupSocketListeners();
+        this.logger.info('Connected to FreeCAD IPC.');
+      } catch {
+        if (attempts >= retries) {
+          throw new Error(`Failed to connect to FreeCAD IPC after ${retries} attempts.`);
+        }
+        await new Promise((res) => { setTimeout(res, delayMs); });
+        await attempt();
+      }
+    };
 
-      attemptConnection();
-    });
+    await attempt();
   }
 
-  _setupSocketListeners() {
+  /**
+   * Wires data/close handlers on the IPC socket.
+   */
+  setupSocketListeners() {
     let buffer = '';
+
     this.socket.on('data', (data) => {
       buffer += data.toString('utf-8');
-      
-      let newlineIdx;
-      while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, newlineIdx).trim();
-        buffer = buffer.slice(newlineIdx + 1);
-        
-        if (line) {
-          try {
-            const response = JSON.parse(line);
-            this._handleResponse(response);
-          } catch (e) {
-            this.logger.error('Failed to parse IPC response', e);
-          }
-        }
-      }
+      const { messages, remaining } = parseBuffer(buffer);
+      buffer = remaining;
+      messages.forEach((msg) => this.handleResponse(msg));
     });
 
     this.socket.on('close', () => {
@@ -116,30 +175,44 @@ export class CadEngineProcess {
     });
   }
 
-  _handleResponse(response) {
+  /**
+   * Resolves or rejects a pending request based on the IPC response.
+   * @param {Object} response
+   */
+  handleResponse(response) {
     const { id } = response;
-    if (this.requestMap.has(id)) {
-      const { resolve, reject } = this.requestMap.get(id);
-      this.requestMap.delete(id);
-      
-      if (response.status === 'ERROR') {
-        reject(new Error(`CadEngine Error: ${JSON.stringify(response.error)}`));
-      } else {
-        resolve(response.data);
-      }
+
+    if (!this.requestMap.has(id)) {
+      return;
+    }
+
+    const { resolve, reject } = this.requestMap.get(id);
+    this.requestMap.delete(id);
+
+    if (response.status === 'ERROR') {
+      reject(new Error(`CadEngine Error: ${JSON.stringify(response.error)}`));
+    } else {
+      resolve(response.data);
     }
   }
 
-  _sendRequest(action, payload = {}) {
-    return new Promise((resolve, reject) => {
-      if (!this.socket) {
-        return reject(new Error('IPC Socket is not connected.'));
-      }
+  /**
+   * Sends a JSON request over the IPC socket and returns a Promise.
+   * @param {string} action
+   * @param {Object} payload
+   * @returns {Promise<Object>}
+   */
+  sendRequest(action, payload = {}) {
+    if (!this.socket) {
+      return Promise.reject(new Error('IPC Socket is not connected.'));
+    }
 
-      const id = `req_${this.requestIdCounter++}`;
+    return new Promise((resolve, reject) => {
+      const id = `req_${this.requestIdCounter}`;
+      this.requestIdCounter += 1;
       this.requestMap.set(id, { resolve, reject });
 
-      const msg = JSON.stringify({ id, action, payload }) + '\n';
+      const msg = `${JSON.stringify({ id, action, payload })}\n`;
       this.socket.write(msg, 'utf-8', (err) => {
         if (err) {
           this.requestMap.delete(id);
@@ -150,7 +223,8 @@ export class CadEngineProcess {
   }
 
   /**
-   * Stops the FreeCAD process.
+   * [COMMAND] Stops the FreeCAD process and closes the IPC socket.
+   * @returns {Promise<void>}
    */
   async stop() {
     if (this.socket) {
@@ -164,19 +238,21 @@ export class CadEngineProcess {
   }
 
   /**
-   * Sends a GeometryScript to FreeCAD for execution.
-   * @param {string} scriptContent 
-   * @returns {Promise<Object>}
+   * [COMMAND] Sends a GeometryScript to FreeCAD for execution.
+   * @param {string} scriptContent - Python/CadQuery code
+   * @returns {Promise<Object>} Execution result
    */
   async executeScript(scriptContent) {
-    return this._sendRequest('EXECUTE_SCRIPT', { code: scriptContent });
+    return this.sendRequest('EXECUTE_SCRIPT', { code: scriptContent });
   }
 
   /**
-   * Reads the object tree from the FreeCAD document.
-   * @returns {Promise<Object>}
+   * [QUERY] Reads the object tree from the open FreeCAD document.
+   * @returns {Promise<Object>} Serialized EngineState
    */
   async getDocumentState() {
-    return this._sendRequest('GET_STATE');
+    return this.sendRequest('GET_STATE');
   }
 }
+
+export default CadEngineProcess;

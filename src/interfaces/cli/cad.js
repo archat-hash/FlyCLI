@@ -1,31 +1,32 @@
 import { EnvironmentManager } from '../../infrastructure/cad/EnvironmentManager.js';
 import { CadEngineProcess } from '../../infrastructure/cad/CadEngineProcess.js';
 import { McpCadTools } from '../../infrastructure/ai/McpCadTools.js';
+import { McpServerAdapter } from '../../infrastructure/mcp/McpServer.js';
 import ConsoleLogger from '../../infrastructure/Logger.js';
 
 /**
  * @module CadAgent
  * @description Orchestrates the interactive CAD modeling session.
  *   Acts as the top-level "CadAgent" from the DDD Ubiquitous Language:
- *   User (AI) CadAgent IpcBridge CadEngineProcess (FreeCAD)
+ *   External Agent (MCP) <-> CadAgent <-> IpcBridge <-> CadEngineProcess (FreeCAD)
  *
  * Traceability:
  *   - Domain: ddd_interfaces.md § CadAgent
  *   - Architecture: implementation_plan.md § [MODIFY] src/interfaces/cli/cad.js
- *   - Lifecycle: implementation_plan.md § Lifecycle (Feedback Loop)
- *   - DEVELOPER.md: CQRS — startSession() is a Command (launches FreeCAD, runs loop)
+ *   - CQRS: startSession() is a Command (launches FreeCAD, starts MCP Server)
  */
 
 /**
  * Bootstraps the CadAgent infrastructure dependencies.
  * @param {object} logger
- * @returns {{ env: EnvironmentManager, engine: CadEngineProcess, tools: McpCadTools }}
+ * @returns {{ env: EnvironmentManager, engine: CadEngineProcess, mcpServer: McpServerAdapter }}
  */
 function buildDependencies(logger) {
   const env = new EnvironmentManager(logger);
   const engine = new CadEngineProcess(logger);
   const tools = new McpCadTools(engine);
-  return { env, engine, tools };
+  const mcpServer = new McpServerAdapter(tools, logger);
+  return { env, engine, mcpServer };
 }
 
 /**
@@ -41,13 +42,11 @@ async function startEngine(env, engine) {
 
 /**
  * Prints the CadAgent welcome banner to stdout.
- * @param {string} prompt
  */
-function printBanner(prompt) {
-  process.stdout.write('\n🚀 FlyCLI CAD Agent — Interactive 3D Modeling\n');
-  process.stdout.write(`${'-'.repeat(50)}\n`);
-  process.stdout.write(`📝 Initial request: "${prompt}"\n`);
-  process.stdout.write('💡 FreeCAD is starting… Please wait.\n\n');
+function printBanner() {
+  process.stderr.write('\n🚀 FlyCLI CAD Agent — Model Context Protocol (MCP) Server\n');
+  process.stderr.write(`${'-'.repeat(50)}\n`);
+  process.stderr.write('💡 FreeCAD is starting… Please wait.\n');
 }
 
 /**
@@ -60,56 +59,61 @@ function printError(err) {
 }
 
 /**
- * Builds a placeholder GeometryScript for MVP pipeline validation.
- * Phase 5 will replace this with a real Gemini AI call.
- * @param {string} prompt
- * @returns {string}
+ * Helper to gracefully stop services.
+ * @param {McpServerAdapter} mcpServer
+ * @param {CadEngineProcess} engine
+ * @param {Function} resolveExit
  */
-function buildPlaceholderScript(prompt) {
-  return [
-    'import cadquery as cq',
-    `# User request: ${prompt}`,
-    "result = cq.Workplane('XY').box(50, 30, 20)",
-    'show_object(result)',
-  ].join('\n');
+async function stopServices(mcpServer, engine, resolveExit) {
+  try {
+    await mcpServer.stop();
+  } finally {
+    await engine.stop();
+    if (resolveExit) resolveExit();
+  }
 }
 
 /**
- * [COMMAND] Runs a single CAD request: renders the geometry and reports result.
- * Full interactive loop with Gemini AI will be wired in Phase 5.
- *
- * @param {McpCadTools} tools
- * @param {string} prompt - User's natural-language request
- * @returns {Promise<void>}
- */
-async function runCadRequest(tools, prompt) {
-  const script = buildPlaceholderScript(prompt);
-  process.stdout.write('⚙️  Executing geometry script in FreeCAD…\n');
-  const result = await tools.renderCadQuery(script);
-  process.stdout.write(`✅ Rendered successfully (${result?.executionTimeMs ?? '?'}ms)\n`);
-  process.stdout.write('👁️  Check the FreeCAD window to see your model.\n');
-}
-
-/**
- * [COMMAND] Main CLI handler for `flycli cad <prompt>`.
- * Orchestrates EnvironmentManager → CadEngineProcess → McpCadTools.
+ * [COMMAND] Main CLI handler for `flycli cad`.
+ * Orchestrates EnvironmentManager → CadEngineProcess → McpServerAdapter.
  * Guarantees engine.stop() is always called (graceful cleanup).
  *
- * @param {string} prompt - Natural-language description of the desired 3D model
  * @returns {Promise<void>}
  */
-export default async function cadCommand(prompt) {
+export default async function cadCommand() {
   const logger = new ConsoleLogger();
-  const { env, engine, tools } = buildDependencies(logger);
+  const { env, engine, mcpServer } = buildDependencies(logger);
 
-  printBanner(prompt);
+  printBanner();
+
+  let isStopping = false;
+  let resolveExit;
+  const exitPromise = new Promise((resolve) => { resolveExit = resolve; });
+
+  const cleanup = async () => {
+    if (isStopping) return;
+    isStopping = true;
+    await stopServices(mcpServer, engine, resolveExit);
+  };
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
 
   try {
     await startEngine(env, engine);
-    await runCadRequest(tools, prompt);
+    /*
+     * Note: Start the MCP Server on stdio.
+     * The Promise from mcpServer.start() will resolve when the server is ready,
+     * but the node process will stay alive because of the stdio event listeners.
+     */
+    await mcpServer.start();
+
+    await exitPromise;
   } catch (err) {
-    printError(err);
+    if (!isStopping) {
+      printError(err);
+    }
   } finally {
-    await engine.stop();
+    await cleanup();
   }
 }

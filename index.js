@@ -57,8 +57,7 @@ program
 
 program
   .command('cad')
-  .description('Start an interactive AI-powered CAD session with FreeCAD')
-  .argument('<prompt>', 'Natural-language description of the 3D model (e.g. "Make a drone frame")')
+  .description('Start an interactive AI-powered CAD session with FreeCAD (MCP Server)')
   .action(cadCommand);
 
 program.parse();
