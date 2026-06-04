@@ -10,7 +10,13 @@ import FreeCADGui
 # It sets up a local TCP server that listens for JSON commands from FlyCLI.
 
 HOST = '127.0.0.1'
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 9099
+PORT = 9099
+for arg in sys.argv[1:]:
+    try:
+        PORT = int(arg)
+        break
+    except ValueError:
+        pass
 
 def handle_client(conn):
     buffer = ""

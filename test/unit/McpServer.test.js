@@ -12,7 +12,6 @@ import { jest } from '@jest/globals';
 const mockConnect = jest.fn();
 const mockClose = jest.fn();
 const mockSetRequestHandler = jest.fn();
-const mockToolsMethod = jest.fn();
 
 jest.unstable_mockModule('@modelcontextprotocol/sdk/server/index.js', () => ({
   Server: jest.fn().mockImplementation(() => ({
@@ -30,9 +29,9 @@ jest.unstable_mockModule('@modelcontextprotocol/sdk/server/stdio.js', () => ({
 jest.unstable_mockModule('../../src/infrastructure/ai/McpCadTools.js', () => ({
   McpCadTools: {
     getToolDefinitions: jest.fn().mockReturnValue([
-      { name: 'fake_tool', description: 'fake', parameters: {} }
-    ])
-  }
+      { name: 'fake_tool', description: 'fake', parameters: {} },
+    ]),
+  },
 }));
 
 const { McpServerAdapter } = await import('../../src/infrastructure/mcp/McpServer.js');
@@ -42,7 +41,7 @@ const setup = () => {
   // Mock CadAgent dependencies
   const mockToolsInstance = {
     renderCadQuery: jest.fn().mockResolvedValue({ success: true }),
-    getEngineState: jest.fn().mockResolvedValue({ objects: [] })
+    getEngineState: jest.fn().mockResolvedValue({ objects: [] }),
   };
   return new McpServerAdapter(mockToolsInstance);
 };
