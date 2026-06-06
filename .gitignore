@@ -4,3 +4,5 @@ coverage/
 tmp/
 dist/
 bundle/
+__pycache__/
+.DS_Store__pycache__/

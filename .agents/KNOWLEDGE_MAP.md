@@ -10,7 +10,8 @@ Welcome, AI Developer. Do not load all documentation files into your context. Us
 
 ## 2. Features & Interfaces
 *   **CLI Commands & Routing** ➔ `docs/reference/cli-commands.md`
-*   **Context Management System** ➔ `docs/ADR-001-Context-System.md`
+*   **Context Management System** ➔ `docs/architecture/adrs/ADR-001-Context-System.md`
+*   **CAD Modeling & Examples** ➔ `docs/reference/cad-examples.md`
 
 ## 3. Operations & Safety
 *   **Firmware Audit Log & Vulnerabilities** ➔ `docs/reference/firmware-audit-log.md`
