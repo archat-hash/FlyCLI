@@ -6,6 +6,25 @@ import traceback
 import FreeCAD
 import FreeCADGui
 
+# Import PySide2 for thread-safe GUI execution
+from PySide2 import QtCore
+
+class ScriptExecutor(QtCore.QObject):
+    execute_signal = QtCore.Signal(object)
+    
+    def __init__(self):
+        super().__init__()
+        self.execute_signal.connect(self._run_script, QtCore.Qt.QueuedConnection)
+        
+    def _run_script(self, func):
+        func()
+        
+    def run_in_gui(self, func):
+        self.execute_signal.emit(func)
+
+# This executor must be instantiated in the main thread (during module import)
+executor = ScriptExecutor()
+
 # This script is meant to be injected into FreeCAD via `FreeCAD.exe freecad_listener.py`
 # It sets up a local TCP server that listens for JSON commands from FlyCLI.
 
@@ -49,42 +68,67 @@ def process_request(request, conn):
     
     if action == 'EXECUTE_SCRIPT':
         code = request.get('payload', {}).get('code', '')
-        # Execute the code in the main thread using GUI update or directly if thread-safe
-        # For FreeCAD, modifying document is generally safe if GUI is locked, but best done carefully.
+        
+        import queue
+        res_queue = queue.Queue()
+
         def execute_in_gui():
             try:
-                # We provide a global environment
                 env = {"FreeCAD": FreeCAD, "FreeCADGui": FreeCADGui, "App": FreeCAD, "Gui": FreeCADGui}
                 exec(code, env)
-                FreeCAD.ActiveDocument.recompute()
-                send_response(conn, {"id": req_id, "status": "SUCCESS", "data": {}})
+                if FreeCAD.ActiveDocument:
+                    FreeCAD.ActiveDocument.recompute()
+                res_queue.put({"status": "SUCCESS", "data": {}})
             except Exception as e:
                 err_msg = traceback.format_exc()
-                send_response(conn, {"id": req_id, "status": "ERROR", "error": {"type": type(e).__name__, "message": str(e), "traceback": err_msg}})
+                res_queue.put({"status": "ERROR", "error": {"type": type(e).__name__, "message": str(e), "traceback": err_msg}})
         
-        # FreeCADGui.updateGui() or similar might be needed depending on OS,
-        # but for simple macro execution, calling it directly might work in a background thread if FreeCAD allows it.
-        # Ideally, we should post an event to the main GUI thread.
-        # For this MVP, we try direct execution.
-        execute_in_gui()
+        executor.run_in_gui(execute_in_gui)
+        
+        try:
+            res = res_queue.get(timeout=15)
+            if res["status"] == "SUCCESS":
+                send_response(conn, {"id": req_id, "status": "SUCCESS", "data": res["data"]})
+            else:
+                send_response(conn, {"id": req_id, "status": "ERROR", "error": res["error"]})
+        except queue.Empty:
+            send_response(conn, {"id": req_id, "status": "ERROR", "error": {"message": "Execution timed out in GUI thread"}})
 
     elif action == 'GET_STATE':
-        doc = FreeCAD.ActiveDocument
-        if not doc:
-            send_response(conn, {"id": req_id, "status": "SUCCESS", "data": {"objects": []}})
-            return
-        
-        objs = []
-        for obj in doc.Objects:
-            props = {}
-            for prop in obj.PropertiesList:
-                try:
-                    props[prop] = str(getattr(obj, prop))
-                except:
-                    pass
-            objs.append({"name": obj.Name, "type": obj.TypeId, "properties": props})
-            
-        send_response(conn, {"id": req_id, "status": "SUCCESS", "data": {"objects": objs}})
+        import queue
+        res_queue = queue.Queue()
+
+        def get_state_in_gui():
+            try:
+                doc = FreeCAD.ActiveDocument
+                if not doc:
+                    res_queue.put({"status": "SUCCESS", "data": {"objects": []}})
+                    return
+                
+                objs = []
+                for obj in doc.Objects:
+                    props = {}
+                    for prop in obj.PropertiesList:
+                        try:
+                            props[prop] = str(getattr(obj, prop))
+                        except:
+                            pass
+                    objs.append({"name": obj.Name, "type": obj.TypeId, "properties": props})
+                res_queue.put({"status": "SUCCESS", "data": {"objects": objs}})
+            except Exception as e:
+                err_msg = traceback.format_exc()
+                res_queue.put({"status": "ERROR", "error": {"type": type(e).__name__, "message": str(e), "traceback": err_msg}})
+
+        executor.run_in_gui(get_state_in_gui)
+
+        try:
+            res = res_queue.get(timeout=5)
+            if res["status"] == "SUCCESS":
+                send_response(conn, {"id": req_id, "status": "SUCCESS", "data": res["data"]})
+            else:
+                send_response(conn, {"id": req_id, "status": "ERROR", "error": res["error"]})
+        except queue.Empty:
+            send_response(conn, {"id": req_id, "status": "ERROR", "error": {"message": "Get state timed out in GUI thread"}})
     else:
         send_response(conn, {"id": req_id, "status": "ERROR", "error": {"message": f"Unknown action: {action}"}})
 

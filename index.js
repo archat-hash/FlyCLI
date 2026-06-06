@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name('flycli')
   .description('CLI tool for Betaflight flight controller interaction')
-  .version('1.2.0');
+  .version('1.3.1');
 
 program
   .command('scan')

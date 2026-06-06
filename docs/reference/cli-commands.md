@@ -63,5 +63,19 @@ This document contains a complete list of commands built into your flight contro
 
 ---
 
+## 🏗 FlyCLI Infrastructure Commands
+
+These commands manage the FlyCLI tool itself and its advanced features like CAD integration.
+
+| Command | Description |
+| --- | --- |
+| `scan` | Scans for available serial ports to find flight controllers. |
+| `health` | Performs basic diagnostics (voltage, version, status) of the FC. |
+| `context` | Retrieves documentation and usage tips for AI agents. |
+| `wizard` | Starts interactive setup processes (e.g., `rx` for radio calibration). |
+| `cad` | Starts the CAD Agent (MCP Server) to orchestrate FreeCAD for 3D modeling. |
+
+---
+
 ### Note for AI Agent:
 This command list is the basis for automated diagnostics. If you want to check hardware health, start with `status` and `resource show`. To change behavior, use `get/set` and necessarily `save`.
