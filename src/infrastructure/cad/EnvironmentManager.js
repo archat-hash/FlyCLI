@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import path from 'path';
 
 /**
  * @module EnvironmentManager
@@ -16,6 +17,10 @@ const WINDOWS_PATHS = [
   'C:\\Program Files\\FreeCAD 0.21\\bin\\FreeCAD.exe',
   'C:\\Program Files\\FreeCAD 0.20\\bin\\FreeCAD.exe',
   'C:\\Program Files\\FreeCAD 1.0\\bin\\FreeCAD.exe',
+  // Per-user installations
+  path.join(process.env.LOCALAPPDATA || '', 'Programs', 'FreeCAD 1.0', 'bin', 'freecad.exe'),
+  path.join(process.env.LOCALAPPDATA || '', 'Programs', 'FreeCAD 0.21', 'bin', 'freecad.exe'),
+  path.join(process.env.LOCALAPPDATA || '', 'Programs', 'FreeCAD 0.22', 'bin', 'freecad.exe'),
 ];
 
 const UNIX_PATHS = [
