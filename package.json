@@ -36,8 +36,8 @@
   ],
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "test:bdd": "node --experimental-vm-modules node_modules/.bin/cucumber-js",
-    "test:hw": "node --experimental-vm-modules node_modules/.bin/cucumber-js --profile hw",
+    "test:bdd": "node --experimental-vm-modules node_modules/@cucumber/cucumber/bin/cucumber-js",
+    "test:hw": "node --experimental-vm-modules node_modules/@cucumber/cucumber/bin/cucumber-js --profile hw",
     "test:full": "npm run test && npm run test:bdd && npm run test:hw",
     "pretest": "npm run lint",
     "lint": "eslint .",

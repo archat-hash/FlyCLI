@@ -29,11 +29,15 @@ describe('EnvironmentManager', () => {
   });
 
   it('should find FreeCAD in standard Windows paths', async () => {
-    // Simulate Windows platform for this test if needed,
-    // but the list is always present in the code.
+    /*
+     * Simulate Windows platform for this test if needed,
+     * but the list is always present in the code.
+     */
 
-    // Mock the first path as missing and the second as existing
-    // C:\Program Files\...
+    /*
+     * Mock the first path as missing and the second as existing
+     * C:\Program Files\...
+     */
     mockStat
       .mockRejectedValueOnce(new Error('Not found'))
       .mockRejectedValueOnce(new Error('Not found'))
