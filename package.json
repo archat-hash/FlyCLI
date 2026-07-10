@@ -1,6 +1,6 @@
 {
   "name": "flycli",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "A reliable CLI tool for Betaflight flight controller interaction and automation.",
   "license": "MIT",
   "keywords": [

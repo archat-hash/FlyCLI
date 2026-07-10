@@ -7,13 +7,16 @@ import healthCommand from './src/interfaces/cli/health.js';
 import contextCommand from './src/interfaces/cli/context.js';
 import wizardCommand from './src/interfaces/cli/wizard.js';
 import cadCommand from './src/interfaces/cli/cad.js';
+import agentCommand from './src/interfaces/cli/agent.js';
+import AgentWorkflowService from './src/application/AgentWorkflowService.js';
+import AgentStorage from './src/infrastructure/storage/AgentStorage.js';
 
 const program = new Command();
 
 program
   .name('flycli')
   .description('CLI tool for Betaflight flight controller interaction')
-  .version('1.4.0');
+  .version('1.5.0');
 
 program
   .command('scan')
@@ -60,4 +63,18 @@ program
   .description('Start an interactive AI-powered CAD session with FreeCAD (MCP Server)')
   .action(cadCommand);
 
+// 100% Command Execution Logging (Interface Decoration)
+try {
+  const rawArgs = process.argv.slice(2).join(' ') || 'empty command';
+
+  // Prevent infinite loops/redundancy for agent tracking commands
+  if (!rawArgs.startsWith('agent log') && !rawArgs.startsWith('agent context') && !rawArgs.startsWith('agent plan set')) {
+    const storage = new AgentStorage();
+    const service = new AgentWorkflowService(storage);
+    await service.logAction('CLI Execution', rawArgs, 'SYSTEM');
+  }
+} catch (err) {
+  // Ignore logging errors silently
+}
+program.addCommand(agentCommand);
 program.parse();
