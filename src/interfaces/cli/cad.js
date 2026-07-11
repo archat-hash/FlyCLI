@@ -24,21 +24,25 @@ import ConsoleLogger from '../../infrastructure/Logger.js';
 function buildDependencies(logger) {
   const env = new EnvironmentManager(logger);
   const engine = new CadEngineProcess(logger);
-  const tools = new McpCadTools(engine);
+
+  let startPromise = null;
+  const lazyStart = async () => {
+    if (engine.process) return;
+    if (!startPromise) {
+      startPromise = (async () => {
+        const executablePath = await env.ensureEnvironmentReady();
+        await engine.start(executablePath);
+      })();
+    }
+    return startPromise;
+  };
+
+  const tools = new McpCadTools(engine, lazyStart);
   const mcpServer = new McpServerAdapter(tools, logger);
   return { env, engine, mcpServer };
 }
 
-/**
- * Resolves the FreeCAD executable and starts the CadEngine process.
- * @param {EnvironmentManager} env
- * @param {CadEngineProcess} engine
- * @returns {Promise<void>}
- */
-async function startEngine(env, engine) {
-  const executablePath = await env.ensureEnvironmentReady();
-  await engine.start(executablePath);
-}
+
 
 /**
  * Prints the CadAgent welcome banner to stdout.
@@ -46,7 +50,7 @@ async function startEngine(env, engine) {
 function printBanner() {
   process.stderr.write('\n🚀 FlyCLI CAD Agent — Model Context Protocol (MCP) Server\n');
   process.stderr.write(`${'-'.repeat(50)}\n`);
-  process.stderr.write('💡 FreeCAD is starting… Please wait.\n');
+  process.stderr.write('💡 FreeCAD will be started lazily when a tool is invoked.\n');
 }
 
 /**
@@ -100,11 +104,11 @@ export default async function cadCommand() {
   process.on('SIGTERM', cleanup);
 
   try {
-    await startEngine(env, engine);
     /*
      * Note: Start the MCP Server on stdio.
      * The Promise from mcpServer.start() will resolve when the server is ready,
      * but the node process will stay alive because of the stdio event listeners.
+     * FreeCAD will be started lazily when a tool is first invoked.
      */
     await mcpServer.start();
 
