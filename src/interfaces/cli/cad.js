@@ -34,15 +34,13 @@ function buildDependencies(logger) {
         await engine.start(executablePath);
       })();
     }
-    return startPromise;
+    await startPromise;
   };
 
   const tools = new McpCadTools(engine, lazyStart);
   const mcpServer = new McpServerAdapter(tools, logger);
   return { env, engine, mcpServer };
 }
-
-
 
 /**
  * Prints the CadAgent welcome banner to stdout.
@@ -86,7 +84,7 @@ async function stopServices(mcpServer, engine, resolveExit) {
  */
 export default async function cadCommand() {
   const logger = new ConsoleLogger();
-  const { env, engine, mcpServer } = buildDependencies(logger);
+  const { engine, mcpServer } = buildDependencies(logger);
 
   printBanner();
 
