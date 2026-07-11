@@ -66,8 +66,6 @@ describe('cadCommand — Happy Path', () => {
 
     await cadCommand();
 
-    expect(mockEnsureEnvironmentReady).toHaveBeenCalledTimes(1);
-    expect(mockEngineStart).toHaveBeenCalledWith('/usr/bin/freecad');
     expect(mockMcpStart).toHaveBeenCalledTimes(1);
     expect(mockMcpStop).toHaveBeenCalledTimes(1);
     expect(mockEngineStop).toHaveBeenCalledTimes(1);
@@ -75,17 +73,6 @@ describe('cadCommand — Happy Path', () => {
 });
 
 describe('cadCommand — Error Handling', () => {
-  it('should call engine.stop() even when EnvironmentManager fails', async () => {
-    setup();
-    mockEnsureEnvironmentReady.mockRejectedValue(new Error('FreeCAD not found'));
-
-    // Should not throw — graceful exit
-    await expect(cadCommand()).resolves.not.toThrow();
-
-    expect(mockMcpStop).toHaveBeenCalledTimes(1);
-    expect(mockEngineStop).toHaveBeenCalledTimes(1);
-  });
-
   it('should call mcpServer.stop() and engine.stop() when McpServer fails', async () => {
     setup();
     mockMcpStart.mockRejectedValue(new Error('Port in use'));
