@@ -18,3 +18,11 @@ Transform FlyCLI from a mere configuration tool into a hardware development assi
 - **KR2.1:** Implement the `flycli cad` command that seamlessly orchestrates the FreeCAD GUI from Node.js by `v1.3.0`.
 - **KR2.2:** Establish a reliable IPC/CadQuery bridge allowing the AI (Gemini) to generate and instantly visualize solid models without user scripting.
 - **KR2.3:** Ensure a zero-friction distribution strategy where users don't need to manually configure FreeCAD paths or Python environments.
+
+## Objective 3: Agent Auditability & Context Recovery
+Ensure that autonomous AI agents operating FlyCLI have a robust, machine-readable audit trail that tracks 100% of actions and maintains contextual continuity across sessions.
+
+**Key Results:**
+- **KR3.1:** Implement a 100% interception layer for all CLI command executions, logging them automatically without requiring explicit agent calls.
+- **KR3.2:** Provide a local, rotation-based JSONL storage mechanism (max 1MB per file) for agent logs to bypass binary packaging constraints.
+- **KR3.3:** Expose a `flycli agent context` command that immediately yields a structured summary of recent actions and current active plans.

@@ -66,9 +66,11 @@ function assertValidScript(code) {
 export class McpCadTools {
   /**
    * @param {import('../cad/CadEngineProcess.js').CadEngineProcess} engine
+   * @param {Function} [lazyStart] - Optional async function to lazily start the engine
    */
-  constructor(engine) {
+  constructor(engine, lazyStart) {
     this.engine = engine;
+    this.lazyStart = lazyStart || (async () => {});
   }
 
   /**
@@ -81,6 +83,7 @@ export class McpCadTools {
    */
   async renderCadQuery(code) {
     assertValidScript(code);
+    await this.lazyStart();
     return this.engine.executeScript(code);
   }
 
@@ -91,6 +94,7 @@ export class McpCadTools {
    * @returns {Promise<Object>} Serialized EngineState (object tree)
    */
   async getEngineState() {
+    await this.lazyStart();
     return this.engine.getDocumentState();
   }
 

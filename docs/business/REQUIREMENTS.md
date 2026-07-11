@@ -16,3 +16,8 @@ Currently, AI Agents configuring Flight Controllers (FC) lack the ability to ver
 ## 4. Constraints
 - Must not break the existing textual CLI execution architecture (`src/interfaces/cli/execute.js`).
 - Must operate over the same USB VCP connection without requiring external tools.
+
+## 5. Agent Workflow Tracking (New Feature)
+- **As an Autonomous Agent**, I want to explicitly log my active plan and completed actions (`flycli agent plan set`, `flycli agent log`) so that if I am restarted or a new agent takes over, the context is preserved locally.
+- **As a System Auditor**, I want 100% of CLI command executions to be automatically intercepted and logged without relying on the agent's explicit logging commands, ensuring absolute accountability.
+- **As an AI Agent**, I want to retrieve a clean, machine-readable summary of my recent context (`flycli agent context`) without ANSI colors or verbose formatting.
