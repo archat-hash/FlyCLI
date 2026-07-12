@@ -6,3 +6,4 @@ dist/
 bundle/
 __pycache__/
 .DS_Store__pycache__/
+.flycli/

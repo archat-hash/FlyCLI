@@ -5,6 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 // eslint-disable-next-line import/no-unresolved
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { McpCadTools } from '../ai/McpCadTools.js';
+import { McpFactoryTools } from '../ai/McpFactoryTools.js';
 
 /**
  * @module McpServerAdapter
@@ -22,6 +23,7 @@ export class McpServerAdapter {
    */
   constructor(cadTools, logger = console) {
     this.cadTools = cadTools;
+    this.factoryTools = new McpFactoryTools();
     this.logger = logger;
 
     this.server = new Server(
@@ -37,8 +39,11 @@ export class McpServerAdapter {
    * @returns {Object}
    */
   static handleListTools() {
-    const rawDefs = McpCadTools.getToolDefinitions();
-    const mappedTools = rawDefs.map((def) => ({
+    const cadDefs = McpCadTools.getToolDefinitions();
+    const factoryDefs = McpFactoryTools.getToolDefinitions();
+    const allDefs = [...cadDefs, ...factoryDefs];
+
+    const mappedTools = allDefs.map((def) => ({
       name: def.name,
       description: def.description,
       inputSchema: def.parameters,
@@ -54,19 +59,15 @@ export class McpServerAdapter {
   async handleCallTool(request) {
     const { name, arguments: args } = request.params;
     try {
-      if (name === 'render_cadquery') {
-        const code = String(args?.code || '');
-        const result = await this.cadTools.renderCadQuery(code);
-        return {
-          content: [{ type: 'text', text: `Success: ${JSON.stringify(result)}` }],
-        };
-      }
-      if (name === 'get_engine_state') {
-        const state = await this.cadTools.getEngineState();
-        return {
-          content: [{ type: 'text', text: JSON.stringify(state) }],
-        };
-      }
+      const handlers = {
+        render_cadquery: () => this.handleRenderCadQuery(args),
+        get_engine_state: () => this.handleGetEngineState(),
+        factory_post_message: () => this.handleFactoryPostMessage(args),
+        factory_get_context: () => this.handleFactoryGetContext(args),
+        factory_transition_state: () => this.handleFactoryTransitionState(args),
+      };
+
+      if (handlers[name]) return await handlers[name]();
       throw new Error(`Unknown tool: ${name}`);
     } catch (err) {
       return {
@@ -74,6 +75,32 @@ export class McpServerAdapter {
         isError: true,
       };
     }
+  }
+
+  async handleRenderCadQuery(args) {
+    const code = String(args?.code || '');
+    const result = await this.cadTools.renderCadQuery(code);
+    return { content: [{ type: 'text', text: `Success: ${JSON.stringify(result)}` }] };
+  }
+
+  async handleGetEngineState() {
+    const state = await this.cadTools.getEngineState();
+    return { content: [{ type: 'text', text: JSON.stringify(state) }] };
+  }
+
+  async handleFactoryPostMessage(args) {
+    const result = await this.factoryTools.postMessage(args);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+
+  async handleFactoryGetContext(args) {
+    const result = await this.factoryTools.getContext(args.epicName);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+
+  async handleFactoryTransitionState(args) {
+    const result = await this.factoryTools.transitionState(args);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
   }
 
   /**

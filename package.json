@@ -36,11 +36,14 @@
   ],
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --coverage",
     "test:bdd": "node --experimental-vm-modules node_modules/@cucumber/cucumber/bin/cucumber-js",
     "test:hw": "node --experimental-vm-modules node_modules/@cucumber/cucumber/bin/cucumber-js --profile hw",
     "test:full": "npm run test && npm run test:bdd && npm run test:hw",
     "pretest": "npm run lint",
     "lint": "eslint .",
+    "check:arch": "dependency-cruiser --config .dependency-cruiser.cjs src",
+    "analyze": "node scripts/analyze.js",
     "build:bin": "esbuild index.js --bundle --platform=node --format=cjs --outfile=bundle/flycli.cjs --external:serialport --external:commander && node scripts/build-bin.js"
   },
   "pkg": {
@@ -74,5 +77,15 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.32.0",
     "jest": "^29.7.0"
+  },
+  "jest": {
+    "coverageThreshold": {
+      "global": {
+        "branches": 85,
+        "functions": 95,
+        "lines": 95,
+        "statements": 95
+      }
+    }
   }
 }

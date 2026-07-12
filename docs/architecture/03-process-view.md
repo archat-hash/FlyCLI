@@ -1,48 +1,18 @@
 # 3. Process View
 
-## Context
-This view explains the flow of data across asynchronous processes, focusing on hardware communication resilience and output stream separation.
+The Process View explains concurrency, event loops, and asynchronous operations.
 
-## 3.1 Hardware Interaction (Command Lifecycle)
-FlyCLI implements resilient processing of asynchronous events and fragmented data.
+## 3.1 Polling & Serial Communication (RC Calibration)
+- The `rxCalibrationMachine.js` utilizes a non-blocking interval to poll `MSP_RC`.
+- Data is received asynchronously. `SerialFlightController` buffers the data stream and triggers events when a full MSP frame is parsed by `MspProtocol.js`.
+- If no frame is received within 15s, a state machine timeout kills the interval to prevent memory leaks.
 
-```mermaid
-sequenceDiagram
-    participant CLI as interfaces/cli/execute.js
-    participant UC as ExecuteCliUseCase
-    participant SFC as SerialFlightController
-    participant HW as Flight Controller
+## 3.2 FreeCAD Subprocess Lifecycle
+- The main Node.js process does NOT load FreeCAD libraries.
+- When `McpCadTools.js` receives a request, it calls `CadEngineProcess`.
+- A child process is spawned asynchronously (`child_process.spawn`). The Node process monitors `stdout`. Once "Ready" is detected, it communicates via IPC/stdin.
+- The subprocess is terminated explicitly to prevent zombie processes.
 
-    CLI->>SFC: new SerialFlightController(...)
-    CLI->>UC: new ExecuteCliUseCase(SFC, ...)
-    CLI->>UC: execute("status")
-
-    UC->>SFC: connect()
-    SFC->>HW: MSP Handshake (API_VERSION)
-    HW-->>SFC: ACK (0x65)
-
-    UC->>SFC: sendRaw("status\n")
-    HW-->>SFC: Data Chunks...
-    HW-->>SFC: Final Prompt "# "
-
-    SFC-->>UC: Full Response String
-    UC-->>CLI: Parsed JSON/Text
-```
-
-### Implementation Realities:
-- **Data Fragmentation:** USB-VCP requires processing chunks of 64/128 bytes. `SerialFlightController` accumulates data in `#buffer` until the prompt pattern appears.
-- **Debounce:** A delay of **300ms** is added in `ExecuteCliUseCase` after prompt detection to collect the "tail" of data.
-
-## 3.2 Data Stream Separation (Interactive UI)
-For interactive features (like the RC Wizard), visual elements must not corrupt machine-readable output formats.
-
-```mermaid
-graph TD
-    A[FlyCLI Process] -->|Asynchronous Event Loop| B(MSP Polling Timer ~20Hz)
-    B --> C{Output Routing}
-    C -->|Visual Progress Bars| D[process.stderr / TTY]
-    C -->|Final JSON payload| E[process.stdout]
-```
-
-- `process.stderr.write` is used synchronously to draw ANSI bars.
-- `console.log` (stdout) is strictly reserved for the final output string/JSON.
+## 3.3 Factory Event Bus Concurrency
+- `MessengerService` uses atomic file appends (`fs.appendFile`) to write to JSONL.
+- Because Node is single-threaded, file writes to the same JSONL epic log do not face race conditions from within the same CLI invocation, but file rotation requires strict mutex locking if a background Daemon is ever introduced.

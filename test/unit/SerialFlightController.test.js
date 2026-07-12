@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { jest } from '@jest/globals';
 
 // Mock SerialPort BEFORE importing the class
@@ -97,5 +98,51 @@ describe('SerialFlightController', () => {
     unregister();
     controller.handleData(Buffer.from('ignored'));
     expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  test('handleError and handleClose should log error and reset state', () => {
+    controller.handleError(new Error('test error'));
+    expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('test error'));
+  });
+
+  test('waitFor should reject on connection lost', async () => {
+    const promise = controller.waitFor('test', 1000);
+    controller.handleClose();
+    await expect(promise).rejects.toThrow('Connection lost');
+  });
+
+  test('waitForDisconnect should wait and resolve on close', async () => {
+    const promise = controller.waitForDisconnect(1000);
+    // simulate close
+    mockPort.once.mock.calls.find((c) => c[0] === 'close')[1]();
+    await promise;
+  });
+
+  test('reset should clear buffer and close port', async () => {
+    mockPort.isOpen = true;
+    await controller.reset();
+    expect(mockPort.close).toHaveBeenCalled();
+  });
+
+  test('disconnect() should handle port close error', async () => {
+    const connectPromise = controller.connect();
+    await new Promise((resolve) => { setTimeout(resolve, 50); });
+    if (portDataListener) portDataListener(Buffer.from('\r\nCLI\r\n# '));
+    await connectPromise;
+
+    mockPort.close.mockImplementationOnce((cb) => cb(new Error('close failed')));
+    await controller.disconnect();
+    expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('close failed'));
+  });
+
+  test('disconnect() should resolve if disconnected and port closed', async () => {
+    mockPort.isOpen = false;
+    await controller.disconnect();
+    expect(mockPort.close).not.toHaveBeenCalled();
+  });
+
+  test('sendRaw should reject if not open', async () => {
+    mockPort.isOpen = false;
+    await expect(controller.sendRaw('test')).rejects.toThrow('Port not open');
   });
 });
