@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { jest } from '@jest/globals';
 
 // Mock MSP and UI
@@ -101,5 +102,39 @@ describe('RxCalibrationMachine', () => {
     const result = await machine.run();
     expect(result.status).toBe('error');
     expect(result.error).toBe('Connection failed');
+  });
+
+  test('should handle initial telemetry request failure', async () => {
+    mockMsp.connect.mockResolvedValue();
+    mockMsp.disconnect.mockResolvedValue();
+    mockMsp.requestRc.mockRejectedValueOnce(new Error('Initial poll failed'));
+
+    const runPromise = machine.run();
+
+    await jest.advanceTimersByTimeAsync(0);
+    const result = await runPromise;
+
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('Initial telemetry request failed: Initial poll failed');
+  });
+
+  test('should handle telemetry poll lost during loop', async () => {
+    mockMsp.connect.mockResolvedValue();
+    mockMsp.disconnect.mockResolvedValue();
+
+    mockMsp.requestRc
+      .mockResolvedValueOnce([1500, 1500, 1500, 1500]) // initial
+      .mockRejectedValueOnce(new Error('Poll lost')); // poll
+
+    const runPromise = machine.run();
+
+    await jest.advanceTimersByTimeAsync(0); // CONNECTING -> POLLING
+    await jest.advanceTimersByTimeAsync(0); // Initial resolve
+    await jest.advanceTimersByTimeAsync(50); // First poll loop
+
+    const result = await runPromise;
+
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('Telemetry poll lost: Poll lost');
   });
 });

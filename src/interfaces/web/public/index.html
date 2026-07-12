@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlyCLI AI Software Factory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --glass-bg: rgba(30, 41, 59, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      
+      --role-boss: #10b981;
+      --role-manager: #f59e0b;
+      --role-ba: #8b5cf6;
+      --role-architect: #ec4899;
+      --role-developer: #06b6d4;
+      --role-orchestrator: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h1::before {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      background: var(--role-boss);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--role-boss);
+    }
+
+    #epic-name {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 0.9rem;
+    }
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+      animation: slideIn 0.3s ease-out forwards;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.align-right {
+      align-self: flex-end;
+    }
+
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
+    }
+
+    .role-badge {
+      font-weight: 600;
+      padding: 0.1rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .timestamp {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .message-body {
+      background: var(--glass-bg);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--glass-border);
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      line-height: 1.5;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .message.align-right .message-body {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    footer {
+      padding: 1.5rem 2rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      gap: 1rem;
+    }
+
+    select, input, button {
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    input {
+      flex: 1;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.75rem 1.5rem;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>AI Software Factory <span id="epic-name">Loading...</span></h1>
+    <div style="color: var(--text-muted); font-size: 0.85rem;" id="status-indicator">Live • Polling</div>
+  </header>
+
+  <main id="chat-container"></main>
+
+  <footer>
+    <select id="role-select">
+      <option value="Boss">Boss (You)</option>
+      <option value="Manager">Manager</option>
+      <option value="BA">BA</option>
+      <option value="Architect">Architect</option>
+      <option value="Developer">Developer</option>
+    </select>
+    <input type="text" id="message-input" placeholder="Type a message or use @Role to mention someone..." autocomplete="off">
+    <button id="send-btn">Send</button>
+  </footer>
+
+  <script>
+    const chatContainer = document.getElementById('chat-container');
+    const epicNameEl = document.getElementById('epic-name');
+    const inputEl = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const roleSelect = document.getElementById('role-select');
+    
+    // Get epic from URL, default to global
+    const urlParams = new URLSearchParams(window.location.search);
+    const epicName = urlParams.get('epic') || 'test-epic';
+    epicNameEl.textContent = `[${epicName}]`;
+
+    let lastMessageCount = 0;
+
+    const roleColors = {
+      'Boss': 'var(--role-boss)',
+      'Manager': 'var(--role-manager)',
+      'BA': 'var(--role-ba)',
+      'Architect': 'var(--role-architect)',
+      'Developer': 'var(--role-developer)',
+      'Orchestrator': 'var(--role-orchestrator)'
+    };
+
+    function getRoleColor(role) {
+      return roleColors[role] || 'var(--text-muted)';
+    }
+
+    function renderMessage(msg) {
+      const isSelf = msg.senderRole === roleSelect.value;
+      const el = document.createElement('div');
+      el.className = `message ${isSelf ? 'align-right' : ''}`;
+      
+      const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const recipient = msg.recipientRole ? ` ➔ ${msg.recipientRole}` : '';
+
+      el.innerHTML = `
+        <div class="message-header">
+          <span class="role-badge" style="color: ${getRoleColor(msg.senderRole)}">${msg.senderRole}${recipient}</span>
+          <span class="timestamp">${time}</span>
+        </div>
+        <div class="message-body">${escapeHTML(msg.content)}</div>
+      `;
+      chatContainer.appendChild(el);
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+          }[tag]));
+    }
+
+    async function fetchMessages() {
+      try {
+        const res = await fetch(`/api/messages?epic=${encodeURIComponent(epicName)}`);
+        const messages = await res.json();
+        
+        if (messages.length > lastMessageCount) {
+          // Render only new messages
+          const newMsgs = messages.slice(lastMessageCount);
+          newMsgs.forEach(renderMessage);
+          lastMessageCount = messages.length;
+          
+          // Auto scroll to bottom
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+      } catch (err) {
+        console.error('Failed to fetch messages', err);
+      }
+    }
+
+    async function sendMessage() {
+      const content = inputEl.value.trim();
+      if (!content) return;
+
+      const senderRole = roleSelect.value;
+      
+      // Simple parse for recipient
+      let recipientRole = null;
+      const mentionMatch = content.match(/^@(\w+)/);
+      if (mentionMatch) {
+        recipientRole = `@${mentionMatch[1]}`;
+      }
+
+      inputEl.value = '';
+      inputEl.disabled = true;
+
+      try {
+        await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            epicName,
+            senderRole,
+            recipientRole,
+            content
+          })
+        });
+        await fetchMessages();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        inputEl.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // Poll every 2 seconds
+    fetchMessages();
+    setInterval(fetchMessages, 2000);
+  </script>
+</body>
+</html>

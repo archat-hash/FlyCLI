@@ -1,41 +1,16 @@
 # 5. Physical View
 
-## Context
-This view illustrates the deployment environment and the physical hardware connections required for FlyCLI and its interactive features to function.
+The Physical View maps the software onto the hardware and execution environment.
 
-## 5.1 Deployment & Hardware Topology
-FlyCLI is deployed as a Node.js CLI tool running on the Host machine, communicating over USB Serial protocols to embedded devices.
+## 5.1 Host Machine (User's PC / Mac)
+- **Node.js Environment**: The primary runtime. Executes the FlyCLI application.
+- **File System**:
+  - `~/.flycli/agent_logs/`: Persistent volume for Agent JSONL logs.
+  - `~/.flycli/factory_logs/`: Persistent volume for Factory Epic logs.
+- **USB / Serial Hardware**:
+  - The OS maps the Flight Controller to a device node (e.g., `/dev/ttyACM0` or `COM3`).
+  - FlyCLI requires direct R/W access to this node.
 
-```mermaid
-graph TD
-    subgraph Agent Host PC
-        Agent[AI Agent Process (e.g. Antigravity)]
-        Node[Node.js Runtime]
-        FlyCLI[FlyCLI App]
-        Serial[System Serial APIs]
-        
-        Agent -- "Spawns via Shell" --> FlyCLI
-        FlyCLI --> Node
-        Node --> Serial
-    end
-    
-    subgraph Flight Controller Stack
-        STM32[STM32 Chip]
-        BF[Betaflight FW]
-        RX[Radio Receiver]
-        
-        Serial -- "USB VCP (Serial)" --> STM32
-        STM32 --> BF
-        STM32 -- "CRSF / SBUS / FPort" --> RX
-    end
-    
-    subgraph Pilot
-        TX[Radio Transmitter]
-        
-        TX -- "2.4GHz / 868MHz / 915MHz" --> RX
-    end
-```
-
-## 5.2 Physical Constraints
-1. **USB Connectivity:** The Host PC must maintain an uninterrupted USB Virtual COM Port connection. Standard OS buffering rules apply.
-2. **Radio Link Verification:** For RC calibration wizards, the Transmitter (TX) must be bound to the Receiver (RX), and the Receiver correctly wired to a Flight Controller UART. FlyCLI acts as a digital bridge crossing the air gap to verify this physical link.
+## 5.2 Child Environments
+- **FreeCAD Subprocess**: Runs as a separate OS process, isolated from Node.js memory. Consumes significant RAM only when activated.
+- **AI Agent (Remote/Local)**: Operates entirely outside the Node process, connecting either via STDIO (MCP Server) to control the Factory.

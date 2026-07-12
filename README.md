@@ -1,6 +1,6 @@
-# 🚁 FlyCLI: Your Drone Under Full Control (and AI)
+# 🚁 FlyCLI: The AI-Ready Drone Factory
 
-**FlyCLI** is a reliable command-line tool for automated interaction with flight controllers using the **MSP (MultiWii Serial Protocol)**. While primarily designed for **Betaflight**, it also supports other MSP-compatible firmwares like **iNav** or **Cleanflight**, providing a stable interface for developers, AI agents, and pilots.
+**FlyCLI** is a reliable command-line tool for automated interaction with flight controllers using the **MSP (MultiWii Serial Protocol)**. It serves as an **AI Software Factory** host, providing an event bus for multi-agent workflows, Model Context Protocol (MCP) servers for CAD tools (FreeCAD), and Human-in-the-Loop interactive wizards.
 
 ---
 
@@ -9,7 +9,7 @@
 To use `flycli` as a global command from any folder:
 
 ```bash
-# 1. Clone the repository and enter the folder
+# 1. Clone the repository
 git clone https://github.com/archat-hash/FlyCLI.git
 cd FlyCLI
 
@@ -20,47 +20,46 @@ npm install
 npm link
 ```
 
-Now you can run the tool simply with the `flycli` command instead of `./index.js`.
+*Note: For `flycli cad` features, you must have FreeCAD installed and `FREECAD_PATH` configured if it's not in the default location.*
 
 ---
 
 ## 🗺️ Documentation Navigation
 
-Use the following links for a quick dive into the project:
+This project strictly adheres to the **4+1 View Model** and Hexagonal Architecture (DDD). Documentation is structured into precise layers:
 
-*   🚀 **[Quick Start and User Guide](docs/README.md)**  
-    *How to install, scan ports, and execute commands.*
-*   🏗️ **[Architecture and Design Decisions](docs/ARCHITECTURE.md)**  
-    *Description of the C4 model, Clean Architecture, and connection stability mechanisms.*
-*   ⚠️ **[Important Warnings and Safety](docs/README.md#important)**  
-    *Must read before using the `defaults` command.*
-*   🧪 **[Testing and Verification](docs/README.md#testing-and-reliability)**  
-    *About running 40+ tests on real hardware and in simulation.*
+*   🏛️ **[Architecture Views](docs/architecture/)**  
+    *Logical, Process, Development, and Physical Views (C4 & UML).*
+*   📊 **[Business Logic & Use Cases](docs/business/)**  
+    *OKRs, Gherkin Scenarios, and Feature Requirements.*
+*   🧪 **[QA & Test Plans](docs/harness/test_plans/)**  
+    *Step-by-step TestLink-style plans corresponding to Gherkin Use Cases.*
 
 ---
 
-## 🛠️ Commands (after `npm link`)
+## 🛠️ Key Commands
 
 | Command | Description |
 | --- | --- |
 | `flycli scan` | Search for connected flight controllers |
-| `flycli execute <port> 115200 "status"` | Execute a CLI command |
-| `flycli health` | Complete system checkup (JSON report) |
+| `flycli execute <port> 115200 "status"` | Execute a CLI command on the drone |
+| `flycli wizard rx <port> --json` | Launch Human-in-the-Loop RC calibration |
+| `flycli factory mcp_cad_command ...` | Run MCP server to interact with FreeCAD |
+| `flycli factory start <epicName>` | Start an AI Multi-Agent Factory Workflow |
 
 ---
 
-## 🔍 "Bottom-Up": How It Actually Works
+## 🔍 Hexagonal Architecture & Design
 
-Unlike "ideal" schemes, real interaction with a flight controller has its nuances:
-- **Debounce 300ms**: We added a synthetic delay after receiving the `# ` prompt because Betaflight often sends data in chunks, and the prompt may appear before the last bytes of the response arrive.
-- **Handshake MSP**: Before entering CLI mode, we perform an MSP request `API_VERSION`. This is not just a formality — it allows "waking up" the hardware and ensuring the port is ready for data exchange.
-- **Pure ESM**: The project is intentionally written in pure JavaScript (ESM) without TypeScript to minimize build steps and make it as lightweight as possible to run in any Node.js environment.
+FlyCLI is built on Domain-Driven Design (DDD) principles:
+- **Interfaces**: CLI and Terminal UIs are completely decoupled from business logic.
+- **Application**: Wizards (`rxCalibrationMachine`), Execute commands, and the AI Factory Orchestrator.
+- **Infrastructure**: Serial Port implementations, Storage rotation, and MCP tools.
+
+### AI-First & Human-in-the-Loop
+- **Strict Data Segregation**: When `--json` is active, visual UI elements (like progress bars) are pushed to `stderr`, leaving `stdout` 100% clean for LLM Agents to parse.
+- **Persistent AI Context**: The `FactoryStorage` mechanism logs all workflow events in rotation-based JSONL files (`.flycli/factory_logs`) without blowing up the repository size.
+- **Lazy Load CAD**: FreeCAD is a heavy resource; FlyCLI manages it as a lazy child process, spawning only when a specific CAD tool is invoked.
 
 ---
-
-## 🦾 AI-Ready
-FlyCLI is designed for convenient work with Large Language Models. Use the `--json` flag to get structured data that your AI agent can instantly analyze.
-
----
-*Created for those who love to fly and code.* 🚁💨
-
+*Created for autonomous agents, pilots, and those who love to fly and code.* 🚁💨

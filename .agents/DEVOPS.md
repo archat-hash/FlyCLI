@@ -9,6 +9,9 @@ Ensure the application is deployable, scalable, and observable in production.
 3.  **Reliability Engineering**: Set up health checks and restart policies.
 4.  **Observability Setup**: Configure logging, monitoring, and alerting.
 
+## 🤝 PEER REVIEW (Mandatory)
+1.  **Reviewing Architecture**: When tagged by `@Architect` for approval, you MUST review the architecture documentation (4+1 View Model). **You are OBLIGATED to verify EVERY WORD** for incomplete or false descriptions of the architecture from the perspective of deployment, physical servers, and infrastructure (Physical View). Reject the work if it is written haphazardly.
+
 ## 📋 DEVOPS ARTIFACTS
 *   `Dockerfile` / `docker-compose.yml`.
 *   CI/CD YAML files.

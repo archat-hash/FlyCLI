@@ -8,6 +8,7 @@ import contextCommand from './src/interfaces/cli/context.js';
 import wizardCommand from './src/interfaces/cli/wizard.js';
 import cadCommand from './src/interfaces/cli/cad.js';
 import agentCommand from './src/interfaces/cli/agent.js';
+import factoryCommand from './src/interfaces/cli/factory.js';
 import AgentWorkflowService from './src/application/AgentWorkflowService.js';
 import AgentStorage from './src/infrastructure/storage/AgentStorage.js';
 
@@ -62,6 +63,13 @@ program
   .command('cad')
   .description('Start an interactive AI-powered CAD session with FreeCAD (MCP Server)')
   .action(cadCommand);
+
+program
+  .command('factory')
+  .description('Interact with the AI Software Factory Orchestrator Messenger')
+  .argument('<cmd>', 'Factory command (init, status, chat, read, post)')
+  .argument('[args...]', 'Arguments for the command (epicName, role, message)')
+  .action((cmd, args) => factoryCommand([cmd, ...args]));
 
 // 100% Command Execution Logging (Interface Decoration)
 try {

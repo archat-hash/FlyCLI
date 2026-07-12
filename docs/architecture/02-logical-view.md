@@ -1,70 +1,67 @@
 # 2. Logical View
 
-## Context
-This view outlines the primary abstractions, components, and the clean architecture that drives the business logic of FlyCLI. We use hexagonal architecture (Ports and Adapters) to ensure business logic independence.
+The Logical View outlines the Hexagonal Architecture (Ports and Adapters) of FlyCLI.
 
-## 2.1 Hexagonal Architecture (Global System)
+## 2.1 Core Domain Entities
 
-```mermaid
-graph TD
-    subgraph Delivery [Delivery Layer / Composition Root]
-        CLI[src/interfaces/cli/*.js]
-    end
-    
-    subgraph Application [Application Layer]
-        UC[ExecuteCliUseCase]
-        WIZ[RxCalibrationMachine]
-    end
-    
-    subgraph Infrastructure [Infrastructure Layer]
-        SFC[SerialFlightController]
-        MSP[MspProtocol]
-    end
-    
-    subgraph Domain [Domain Layer]
-        IFC((IFlightController))
-        CP[CliParser]
-    end
+### `EventMessage` (Entity)
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `UUID` | Unique identifier for the log entry |
+| `epicName` | `String` | The Epic to which this event belongs |
+| `agentRole` | `String` | The role (BA, Architect, Developer, etc.) |
+| `content` | `String` | The actual message or terminal output |
+| `timestamp` | `ISO8601` | Time of creation |
+| `attachments`| `Array<String>` | Optional array of absolute file paths |
 
-    CLI -- "Injects" --> SFC
-    CLI -- "Initializes" --> UC
-    CLI -- "Initializes" --> WIZ
-    UC -- "Uses" --> IFC
-    WIZ -- "Uses" --> MSP
-    SFC -- "Implements" --> IFC
-    UC -- "Uses" --> CP
-```
+## 2.2 Core Interfaces (Ports)
 
-### Layers:
-- **Domain Layer**: Entities and interfaces (`IFlightController`, `CliParser`).
-- **Application Layer**: Use Cases that implement specific scenarios (`ExecuteCliUseCase`, `RxCalibrationMachine`).
-- **Infrastructure Layer**: Implementation of Serial communication (`SerialFlightController`) and binary protocol parsing (`MspProtocol`).
-- **Delivery Layer**: CLI interfaces in `src/interfaces/cli/`. This is the only place where infrastructure connects with the application.
+### `IFlightController`
+| Method | Parameters | Returns | Throws |
+| :--- | :--- | :--- | :--- |
+| `connect` | `portName: string` | `Promise<void>` | `ConnectionError` if port busy |
+| `disconnect` | `none` | `Promise<void>` | `none` |
+| `execute` | `command: string` | `Promise<string>` | `TimeoutError` if no response |
 
-## 2.2 Interactive RC State Machine (Feature Logic)
-The `RxCalibrationMachine` governs the RC wizard lifecycle.
+### `IAgentStorage` (Logging)
+| Method | Parameters | Returns | Throws |
+| :--- | :--- | :--- | :--- |
+| `appendLog` | `msg: EventMessage` | `Promise<void>` | `StorageError` |
+| `rotateLog` | `none` | `Promise<void>` | `StorageError` if no space |
 
-```mermaid
-stateDiagram-v2
-    [*] --> INIT: Execution Started
-    INIT --> CONNECTING: Open Port
-    CONNECTING --> POLLING: Port Opened Successfully
-    CONNECTING --> ERROR: Port Failure
-    
-    state POLLING {
-        [*] --> READ_MSP
-        READ_MSP --> RENDER_UI
-        RENDER_UI --> CHECK_LIMITS
-        CHECK_LIMITS --> READ_MSP: Sticks haven't reached min/max
-    }
-    
-    POLLING --> ANALYZING: All 4 axes hit edges (or Timeout)
-    ANALYZING --> SUCCESS: Data Valid
-    ANALYZING --> TIMEOUT: Data Invalid / Incomplete
-    
-    SUCCESS --> DONE: Prepare JSON
-    TIMEOUT --> DONE: Prepare Error JSON
-    ERROR --> DONE
-    
-    DONE --> [*]: process.exit(0/1)
-```
+### `ICadEngine` (FreeCAD)
+| Method | Parameters | Returns | Throws |
+| :--- | :--- | :--- | :--- |
+| `spawn` | `none` | `Promise<void>` | `ConfigurationError` if FreeCAD missing |
+| `executeScript` | `pythonScript: string` | `Promise<string>` | `ExecutionError` |
+
+### `IMcpServer` (AI Context)
+| Method | Parameters | Returns | Throws |
+| :--- | :--- | :--- | :--- |
+| `registerTool` | `name: string, handler: Function` | `void` | `none` |
+| `start` | `stdio mode` | `Promise<void>` | `none` |
+
+### `IMessengerService` (Factory Bus)
+| Method | Parameters | Returns | Throws |
+| :--- | :--- | :--- | :--- |
+| `postMessage` | `epic: string, role: string, msg: string` | `Promise<void>` | `none` |
+| `attachFile` | `epic: string, filepath: string` | `Promise<void>` | `FileNotFound` |
+
+### `IPortScanner`
+| Method | Parameters | Returns | Throws |
+| :--- | :--- | :--- | :--- |
+| `scan` | `none` | `Promise<Array<PortInfo>>` | `HardwareError` |
+
+## 2.3 Application Layer (Use Cases)
+- **Commands**: `ExecuteCliUseCase.js`, `FactoryOrchestrator.js`
+- **Queries**: `ListPortsUseCase.js`, `GetHealthCheckUseCase.js`
+*Rule: Use Cases coordinate between domain and secondary adapters but contain zero I/O logic.*
+
+## 2.3 Secondary Adapters (Infrastructure)
+- **Communication**: `SerialFlightController.js` (implements IFlightController), `MspProtocol.js`, `PortScanner.js`.
+- **Storage**: `AgentStorage.js`, `FactoryStorage.js` (handles raw JSONL File I/O).
+- **CAD**: `CadEngineProcess.js` (manages the FreeCAD Python subprocess).
+
+## 2.4 Primary Adapters (Interfaces)
+- **CLI**: `execute.js`, `scan.js`, `wizard.js` (Parses args, passes to Use Cases).
+- **MCP**: `McpServer.js`, `McpFactoryTools.js` (Exposes Use Cases to LLMs).
