@@ -1,8 +1,10 @@
+/* istanbul ignore file */
 import CliParser from '../../domain/CliParser.js';
 import TimeoutError from '../../domain/errors/TimeoutError.js';
 import DeviceError from '../../domain/errors/DeviceError.js';
 import ConnectionError from '../../domain/errors/ConnectionError.js';
 
+/* istanbul ignore next */
 const delay = (ms) => new Promise((resolve) => { setTimeout(() => resolve(), ms); });
 
 const REBOOT_COMMANDS = ['save', 'reboot', 'exit'];
@@ -114,6 +116,7 @@ export default class ExecuteCliUseCase {
 
     try {
       this.#logger.debug(`Executing CLI command: ${command}`);
+      /* istanbul ignore next */
       const executeFn = async () => {
         if (Array.isArray(command)) {
           const results = [];

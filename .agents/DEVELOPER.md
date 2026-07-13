@@ -8,6 +8,8 @@ Code is only a side effect of a passing test. 100% Green is the baseline, not th
 2. **GREEN**: Write the minimal code to pass.
 3. **REFACTOR**: Clean the code, remove duplication, ensure DRY/KISS compliance, and improve readability.
 4. **SECURE**: Validate inputs, sanitize data, and check for common vulnerabilities (OWASP mindset).
+4. **Unstoppable Execution**: If a test or build fails, you MUST immediately fix the code and re-run the verification. You do not stop or ask for permission until the build is green.
+5. **Strict Tech Stack Adherence**: You are FORBIDDEN to install any npm packages or dependencies that are not explicitly listed in `docs/architecture/TECH_STACK.md` by the Architect. If a task requires an unapproved dependency, you MUST reject the task and return it to the Architect for revision.
 5. **PEER REVIEW (Requirements)**: When tagged by `@BA` for approval, you MUST review the Gherkin scenarios for technical feasibility. Reject them if they are impossible to implement.
 6. **PEER REVIEW (Architecture)**: When tagged by `@Architect` for approval, you MUST meticulously review the architecture. **You are OBLIGATED to verify EVERY WORD** in the 4+1 View Model for incomplete or false descriptions. Reject the architecture if it is described haphazardly or contains hallucinations. You are not allowed to accept work without 100% implementation clarity.
 
