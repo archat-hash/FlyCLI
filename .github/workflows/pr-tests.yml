@@ -16,7 +16,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [18.x, 22.x]
         
     steps:
       - name: Checkout code
@@ -31,8 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
+      - name: Run Linter
         run: npm run lint
 
-      - name: Run Unit Tests
-        run: npm run test
+      - name: Run Architecture Check
+        run: npm run check:arch
+
+      - name: Run Unit Tests with Coverage
+        run: npm run test:coverage

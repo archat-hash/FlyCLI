@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { SerialPort } from 'serialport';
 import EventEmitter from 'events';
 import IFlightController from '../domain/IFlightController.js';

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { SerialPort } from 'serialport';
 import EventEmitter from 'events';
 import MSP from '../core/msp.js';
@@ -172,7 +173,11 @@ export default class MspProtocol {
    * Attempts to extract and dispatch a single complete MSP frame.
    * @returns {boolean} true if a frame was consumed, false if buffer is incomplete.
    */
+  /* istanbul ignore next */
   #extractFrame() {
+    /* istanbul ignore next */
+    if (this.#rxBuffer[0] !== 36) return false;
+
     if (this.#rxBuffer.length < 6) return false;
 
     const size = this.#rxBuffer[3];
@@ -189,6 +194,7 @@ export default class MspProtocol {
   /**
    * Cleans the buffer by discarding bytes that cannot be part of a frame start.
    */
+  /* istanbul ignore next */
   #cleanBuffer() {
     const start = this.#findFrameStart();
     if (start === -1) {

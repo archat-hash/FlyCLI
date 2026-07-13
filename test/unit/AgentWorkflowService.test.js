@@ -25,6 +25,10 @@ describe('AgentWorkflowService', () => {
     await fs.remove(testDir);
   });
 
+  test('should throw error if storage is not provided', () => {
+    expect(() => new AgentWorkflowService()).toThrow('storage dependency required');
+  });
+
   test('should log an action and retrieve it', async () => {
     await service.logAction('TEST_ACTION', 'This is a test action', 'DEVELOPER');
 
@@ -32,6 +36,14 @@ describe('AgentWorkflowService', () => {
     expect(summary).toContain('TEST_ACTION');
     expect(summary).toContain('This is a test action');
     expect(summary).toContain('[DEVELOPER]');
+  });
+
+  test('should handle actions without role or description', async () => {
+    await service.logAction('SIMPLE_ACTION');
+    const summary = await service.getContextSummary();
+    expect(summary).toContain('SIMPLE_ACTION');
+    expect(summary).not.toContain('[]');
+    expect(summary).not.toContain('undefined');
   });
 
   test('should set and get the plan', async () => {

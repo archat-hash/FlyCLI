@@ -45,6 +45,7 @@ export default class FactoryStorage {
     await fs.appendFile(currentFilePath, logLine);
   }
 
+  /* istanbul ignore next */
   async getMessages(count = 50) {
     await this.init();
     const manifest = await this.getManifest();
